@@ -1,9 +1,12 @@
-//     bbGrid.js 0.8.2
+//     bbGrid.js 0.9.0
 
 //     (c) 2012-2013 Minin Alexey, direct-fuel-injection.
 //     bbGrid may be freely distributed under the MIT license.
 //     For all details and documentation:
 //     http://direct-fuel-injection.github.com/bbGrid/
+//
+//     Customizations by Russell Todd (North Point Ministries)
+//	   https://github.com/npm-it/bbGrid
 (function () {
     var templateSettings = {
 	    evaluate: /<%([\s\S]+?)%>/g,
@@ -51,7 +54,6 @@
         options || (options = {});
         _.extend(this, _.pick(options, _.union(viewOptions, _.values(options.events))));
         Backbone.View.apply(this, [options]);
-        _.bindAll(this, 'numberComparator', 'stringComparator');
         this.setDict(bbGrid.lang);
         this.on('all', this.EventHandler, this);
         this.rowViews = {};
@@ -63,6 +65,11 @@
         this.collection.on("all", this.collectionEventHandler, this);
         this.enableFilter = _.compact(_.pluck(this.colModel, 'filter')).length > 0;
         this.autofetch = !this.loadDynamic && this.autofetch;
+
+        var initSortCol = _.find(this.colModel, function(col) { return col.sortOrder; } );
+	    if (initSortCol) {
+			this.rsortBy(initSortCol);
+        }
         this.render();
         if (this.autofetch) {
             this.collection.fetch();
@@ -76,6 +83,13 @@
                 }
             });
         }
+        if (this.enableSearch) { // default the searchable value to true
+	        _.each(this.colModel,function(col) {
+		        if (col.searchable !== false) col.searchable = true;
+	        })
+	        this.searchColumns = _.where(this.colModel, {searchable: true});
+        }
+        
     };
 
     _.extend(bbGrid.View.prototype, Backbone.View.prototype, {
@@ -197,12 +211,6 @@
             this.collection = collection || new Backbone.Collection();
             this.collection.on('all', this.collectionEventHandler, this);
         },
-        numberComparator: function (model) {
-            return model.get(this.sortName);
-        },
-        stringComparator: function (model) {
-            return ("" + model.get(this.sortName)).toLowerCase();
-        },
         sortBy: function (sortAttributes) {
             var attributes = sortAttributes;
             if (attributes.length) {
@@ -236,23 +244,53 @@
             }
         },
         rsortBy: function (col) {
-            var isSort, sortType, boundComparator;
-            isSort = (this.sortName && this.sortName === col.name) ? false : true;
-            this.sortName = col.name;
+        	// if we've already sorted on this column then just reverse and be done with it
+            if (this.sortName && this.sortName === col.name) {
+	            this.collection.models.reverse();
+	            return;
+            }
+            var sortType;
+			this.sortName = col.name;
+			this.collection.sortName = this.sortName;
+            
             sortType = col.sorttype || 'string';
             this.sortOrder = (this.sortOrder === 'asc') ? 'desc' : 'asc';
-            boundComparator = _.bind(this.stringComparator, this.collection);
-            switch (sortType) {
-            case 'string':
-                boundComparator = _.bind(this.stringComparator, this.collection);
-                break;
-            case 'number':
-                boundComparator = _.bind(this.numberComparator, this.collection);
-                break;
-            default:
-                break;
+            if (_.isFunction(sortType)) this.collection.comparator = sortType;
+            else {
+	            switch (sortType) {
+		            case 'number':
+		                this.collection.comparator = function(model) {
+			                var n = model.get(this.sortName);
+			                if ( _.isNumber(n) ) return n;
+			                if ( _.isString(n) ) {
+				                // return either the float or int
+				                var f = parseFloat(n);
+				                var i = parseInt(n);
+				                if (f == i) return i;
+				                return f;
+			                }
+		                };
+		                break;
+		            case 'date':
+		                this.collection.comparator = function(model) {
+				        	var d = model.get(this.sortName);
+				        	if (d === null) return 0;
+				        	var asDate = new Date(d);
+				        	return asDate.getTime();		                
+		                };
+		                break;
+		            case 'string':
+		            default:
+		                this.collection.comparator = function(model) {
+		                	return ("" + model.get(this.sortName)).trim().toLowerCase();
+		                };
+		                break;
+	            }
+			}
+            this.collection.sort();
+            if (col.sortOrder === 'desc') {
+	            this.collection.models.reverse(); // this should only happen first time through
             }
-            this.collection.models = isSort ? this.collection.sortBy(boundComparator) : this.collection.models.reverse();
         },
         getIntervalByPage: function (page) {
             var interval = {};
@@ -425,7 +463,7 @@
             $el = $(event.currentTarget);
             this.sortSequence || (this.sortSequence = []);
             col = _.find(this.colModel, function (col) { return col.title === $el.text(); });
-            if (!col || (col && (col.name === 'bbGrid-actions-cell' || !col.index))) {
+            if (!col || !col.index) {
                 return false;
             }
             col.sortOrder = (col.sortOrder === 'asc' ) ? 'desc' : 'asc';
@@ -532,7 +570,7 @@
                     <i class="icon-plus<%if (isSelected) {%> icon-minus<%}%>">\
                 </td>\
             <%} _.each(values, function (row) {%>\
-                <td <% if (row.name === "bbGrid-actions-cell") {%>class="bbGrid-actions-cell"<%}%>>\
+                <td <% if (row.hasActions) {%>class="bbGrid-actions-cell"<%}%>>\
                     <%=row.value%>\
                 </td>\
             <%})%>', null, templateSettings
@@ -612,9 +650,10 @@
                 isDisabled: isDisabled,
                 values: _.map(cols, function (col) {
                     if (col.actions) {
-                        col.name = 'bbGrid-actions-cell';
+                        col.hasActions = true; //'bbGrid-actions-cell';
                         col.value = col.actions(self.model.id, self.model.attributes, self.view);
                     } else {
+                    	col.hasActions = false;
                         col.value = self.model.attributes[col.name];
                     }
                     return col;
@@ -809,7 +848,6 @@
     bbGrid.SearchView = function (options) {
         this.events = {
             'keyup input[name=search]': 'onSearch',
-            'click li > a': 'setSearchOption'
         };
         Backbone.View.apply(this, [options]);
         this.view = options.view;
@@ -819,57 +857,48 @@
         tagName: 'div',
         className: 'bbGrid-search-bar pull-right',
         template: _.template(
-            '<div class="input-append">\
-                <input name="search" class="span2" type="text" placeholder="<%=dict.search%>">\
-                <div class="btn-group dropup">\
-                    <button class="btn dropdown-toggle" data-toggle="dropdown">\
-                    <span name="column"><%=cols[0].title%></span>\
-                    <span class="caret"></span>\
-                    </button>\
-                    <ul class="dropdown-menu pull-right">\
-                        <% _.each(cols, function (col, index) {%>\
-                            <li <% if (index === searchOptionIndex) { %>class="active"<% } %>>\
-                                <a name="<%=index%>" href="#"><%=col.title%></a>\
-                            </li>\
-                        <%})%>\
-                    </ul>\
-                </div>\
+            '<div class="input">\
+                <input name="search" class="span3" type="text" placeholder="<%=dict.search%>">\
             </div>', null, templateSettings
         ),
         initialize: function (options) {
-            _.bindAll(this, 'setSearchOption');
             options.view._collection = options.view.collection;
-            this.searchOptionIndex = this.searchOptionIndex || 0;
         },
         onSearch: function (event) {
             var self = this,
                 $el = $(event.target),
                 text = $el.val(),
-                pattern = new RegExp(text, "gi");
+                pattern = new RegExp(text, "gi"),
+                val, 
+                matches,
+                searchCols;
             this.view.collection = this.view._collection;
+            searchCols = this.view.searchColumns;
+            _.each(searchCols,function(col) {
+            	col.search = col.customSearch || function(model,match) {
+	            	val = model.get(col.name).toLowerCase();
+					if (!val) return false;
+					return ( val.lastIndexOf(match.toLowerCase(), 0) === 0 );									
+            	};
+            });
             if (text) {
                 this.view.setCollection(new this.view._collection.constructor(
-                    this.view.collection.filter(function (data) {
-                        return pattern.test(data.get(self.view.colModel[self.searchOptionIndex].name));
+                    this.view.collection.filter(function (model) {
+                    	matches = false;
+                    	_.each(searchCols, function (col) {
+							if (matches === false) {
+								matches = col.search(model,text);
+							}
+						});
+						return matches;
                     })
                 ));
             }
             this.view.collection.trigger('reset');
         },
-        setSearchOption: function (event) {
-            var el = event.currentTarget;
-            $('a[name=' + this.searchOptionIndex + ']', this.$el).parent().removeClass('active');
-            $(el).parent().addClass('active');
-            this.searchOptionIndex = Number(el.name);
-            $('button span[name=column]', this.$el).text(el.text);
-        },
         render: function () {
             var searchBarHtml = this.template({
                 dict: this.view.dict,
-                searchOptionIndex: this.searchOptionIndex,
-                cols: _.filter(this.view.colModel, function (col) {
-                    return col.name && !col.hidden;
-                })
             });
             this.$el.html(searchBarHtml);
             return this.$el;
@@ -919,6 +948,7 @@
         onFilter: function () {
             var text, self = this,
                 collection = new Backbone.Collection(this.view._collection.models);
+            this.view.searchBar.render();
             this.view.setCollection(collection);
             _.each($('*[name=filter]', this.$el), function (el) {
                 text = $.trim($(el).val());
@@ -930,7 +960,7 @@
             this.view.trigger('filter');
         },
         filter: function (collection, options) {
-            var keys = _.keys(options), option,
+            var keys = _.keys(options), option, filterCol,
                 key = _.first(keys),
                 text = options[key];
             if (!keys.length) {
@@ -938,7 +968,14 @@
             }
             delete options[key];
             if (text.length > 0) {
+            	// figure out which column we are filtering on
+				_.each(this.view.colModel, function (col) {
+					if (col.filterColName && key === col.filterColName) {
+						filterCol = col;
+					}
+				});
                 collection.reset(_.filter(collection.models, function (model) {
+                	if (filterCol && filterCol.customFilter) return filterCol.customFilter(model,text);
                     option = model.get(key);
                     if (option) {
                         return ("" + option).toLowerCase().indexOf(text.toLowerCase()) >= 0;
@@ -953,7 +990,8 @@
             var options = {}, self = this, filterBarHtml;
             _.each(this.view.colModel, function (col) {
                 if (col.filter) {
-                    options[col.name] = _.uniq(self.view.collection.pluck(col.filterColName || col.name));
+                	if (col.filterOptions) options[col.name] = col.filterOptions;
+                    else options[col.name] = _.uniq(self.view.collection.pluck(col.filterColName || col.name));
                 }
             });
             filterBarHtml = this.template({
