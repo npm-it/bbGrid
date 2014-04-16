@@ -1,13 +1,12 @@
-[bbGrid (npm)](http://github.com/npm-it/bbGrid)
+[bbGrid (npmweb)](http://github.com/npmweb/bbGrid)
 ====================
 
 [bbGrid (original)](http://direct-fuel-injection.github.com/bbGrid/)
 ====================
-That's an extendable grid system (jqGrid like) developed on Backbone.js, Twitter Bootstrap and jQuery frameworks.
+An extendable grid system (jqGrid like) developed on Backbone.js
 
 #### Requirements
 - Backbone.js > 1.0.0
-- Twitter Bootstrap >= v2.2.1 < v2.3.x
 - jQuery >= v1.8.3
 
 Include bbGrid.js and bbGrid.css into your project. 
@@ -16,10 +15,11 @@ Include bbGrid.js and bbGrid.css into your project.
 The npm fork has significant customizations, simplifications and new features.
 
 #### Changes
+- Removed the bootstrap dependency
 - Added a date comparator for easier date sorting
 - Changed the search function to use a *startsWith* paradigm instead of matching anywhere within the string
 - Changed search to search across all of the specified columns rather than selecting a column to search on
-- Enabled searching on columns that have an *actions* parameter specified.
+- Enabled searching on columns that have an *render* parameter specified.
 
 #### New Features
 - Added a LESS version of the CSS

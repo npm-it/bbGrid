@@ -1,0 +1,22 @@
+{
+    "name": "npmweb/bbgrid",
+    "type": "component",
+    "require": {
+        "robloach/component-installer": "*",
+        "components/backbone": "1.1.*"
+    },
+    "extra": {
+        "component": {
+            "scripts": [
+                "bbGrid.js"
+            ],
+            "styles": [
+                "css/bbGrid.css"
+            ],
+            "shim": {
+                "deps": ["backbone", "jquery"],
+                "exports": "bbGrid"
+            }
+        }
+    }
+}
