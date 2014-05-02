@@ -991,8 +991,13 @@ bbGrid.View = Backbone.View.extend({
         var options = {}, self = this, filterBarHtml;
         _.each(this.view.colModel, function (col) {
             if (col.filter) {
-                if (col.filterOptions) options[col.property] = col.filterOptions;
-                else options[col.property] = _.uniq(self.view.collection.pluck(col.filterProperty || col.property));
+                if (col.filterOptions) {
+                    options[col.property] = col.filterOptions;
+                } else { 
+                    var list = _.uniq(self.view.collection.pluck(col.filterProperty || col.property));
+                    list.sort();
+                    options[col.property] = list;
+                }
             }
         });
         filterBarHtml = this.template({
