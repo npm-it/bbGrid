@@ -14,7 +14,7 @@
 	<!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame -->
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 	
-	<title>bbGrid Examples from NPM Version</title>
+	<title>bbGrid Numeric Data Example</title>
 	
 	<!--
 	<link rel="stylesheet" href="includes/css/bootstrap.min.css" />
@@ -25,12 +25,14 @@
 	<script src="//underscorejs.org/underscore-min.js" type="text/javascript"></script>
 	<script src="//backbonejs.org/backbone-min.js" type="text/javascript"></script>
 	<script src="../bbGrid.js" type="text/javascript"></script>
+	<link rel="stylesheet" href="includes/css/foundation.css" />
+
 	<style type="text/css">
 		.wrapper { width: 960px; margin: 10px auto; }
 		.bbGrid-grid-head-holder th.sortable { cursor: pointer; }
 		/*.bbGrid-grid-head-holder th.sortable span.arrows i.up:before { display:block; content: "\25B3"; font-size: 0.75em; font-style: normal; } 
 		.bbGrid-grid-head-holder th.sortable span.arrows i.down:before { display:block; content: "\25BD "; font-size: 0.75em; font-style: normal; } */
-		.bbGrid-grid-head-holder th.sortable span.arrows { float: left; }
+		.bbGrid-grid-head-holder th.sortable span.arrows { float: left; margin-right: 0.25em; }
 		.bbGrid-grid-head-holder th.sortable span.arrows i { width: 0; height: 0; display: block; }
 		.bbGrid-grid-head-holder th.sortable span.arrows i.up { 
 			border-left: .35em solid transparent;
@@ -67,17 +69,6 @@
 	
 	<article class="row">
 		
-		<h1>Data Grid 1</h1>
-		
-		<p>This example is a basic grid that has the following features:</p>
-		<ul>
-			<li>Default sort</li>
-			<li>Custom display (via actions)</li>
-			<li>Custom Sorting</li>
-			<li>Custom Filter options</li>
-			<li>Custom Filter column</li>
-			<li>Custom Search</li>
-		</ul>				
 		<div id="example-1" class="span12"></div>
 	
 	</article>
@@ -93,12 +84,13 @@
 
 <script>
 // sample data from http://www.briandunning.com/sample-data/
-var peopleJSON = (function () {
+/*
+var mlbJSON = (function () {
     var json = null;
     $.ajax({
         'async': false,
         'global': false,
-        'url': 'includes/data/sample.json',
+        'url': 'includes/data/mlb2011.json',
         'dataType': "json",
         'success': function (data) {
             json = data;
@@ -106,22 +98,58 @@ var peopleJSON = (function () {
     });
     return json;
 })(); 
+*/
+var MLB = {};
 
-var personCollection = new Backbone.Collection(peopleJSON);
+MLB.Collection = bbGrid.Collection.extend({
+	url: 'includes/data/mlb2011.json'
+});
+MLB.coll = new MLB.Collection();
 
-var states = _.uniq ( personCollection.pluck('State').sort() );
+//var teams = _.uniq ( coll.pluck('teamID').sort() );
+
+var statFormatter = new Intl.NumberFormat('en-US',{
+    minimumFractionDigits: 3,
+    style: 'decimal'
+});
+var averages = [];
+function decimalFormatter(val) {
+	if (!val || _.isEmpty(val)) return '';
+	var num = statFormatter.format(val);
+	averages.push(num);
+	if (num == 'NaN') return '';
+	return num.replace("0.",".");
+}
+
 
 $(document).ready(function(){
-	var personGrid = new bbGrid.View({
+	MLB.personGrid = new bbGrid.View({
 		container: $('#example-1'),
-		collection: personCollection,
+		//collection: MLB.coll,
+		//json: mlbJSON,
+		url: 'includes/data/mlb2011.json',
+		autoFetch: true,
 		rows: 50,
 		rowList: [10,20,50,100],
 		enableSearch: true,
 		colModel: [
-			{ property: 'FirstName', label: 'First Name'  },
-			{ property: 'LastName', label: 'Last Name', defaultSort: 'asc' },
-			{ property: 'Company', label: 'Company' },
+			{ property: 'nameLast', label: 'Last Name', defaultSort: 'asc' },
+			{ property: 'nameFirst', label: 'First Name'  },
+			{ property: 'bats', label: 'Bats', filter: true, searchable: false  },
+			{ property: 'throws', label: 'Throws', filter: true, searchable: false  },
+			{ property: 'lg', label: 'League', filter: true, searchable: false },
+			{ property: 'teamID', label: 'Team', filter: true, searchable: false },//, filterOptions: teams },
+			{ property: 'AB', filter: false, type: 'integer', searchable: false },
+			{ property: 'H', filter: false, type: 'integer', searchable: false },
+			{ property: 'avg', label: 'Ave', filter: false, searchable: false, 
+				type: 'decimal', minimumFractionDigits: 3,
+				render: function(model, view) {
+					return decimalFormatter(model.get('avg'));
+
+				}
+			
+			}
+			/*
 			{ property: 'City', label: 'Location', 
 				filter: true,  
 				filterProperty: 'State', // could also provide a customFilter function
@@ -146,13 +174,17 @@ $(document).ready(function(){
 				render: function(model, view) {
 					if (model.get('Web')) return '<a href="' +model.get('Web') + '" target="_blank">'+model.get('Web').trim().replace(/^http(s)?:\/\/(www.)?(.*)(\/$)?/gi,"$3")+'</a>'; 
 				} 
-			}
+			} */
 		],
 	});
-	
+
+	console.info(MLB.personGrid);	
 });
 
 </script>
-  
+    <script src="includes/js/foundation.min.js"></script>
+    <script>
+      $(document).foundation();
+    </script>
 </body>
 </html>
