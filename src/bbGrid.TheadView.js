@@ -32,7 +32,6 @@ bbGrid.TheadView = Backbone.View.extend({
         }
         cols = _.filter(this.view.colModel, function (col) {return !col.hidden; });
         cols = _.map(cols, function (col) { col.label = col.label || col.property; return col; });
-        console.info(cols);
         this.view.colLength = cols.length + (this.view.multiselect ? 1 : 0) + (this.view.subgrid ? 1 : 0);
         theadHtml = this.template({
             isMultiselect: this.view.multiselect,

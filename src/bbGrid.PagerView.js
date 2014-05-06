@@ -3,25 +3,25 @@ bbGrid.PagerView = Backbone.View.extend({
     initialize: function (options) {
         this.events = {
             'click a': 'onPageChanged',
-            'change .bbGrid-pager-rowlist': 'onRowsChanged',
-            'change .bbGrid-page-input': 'onPageChanged'
+            'change .pager .rowlist': 'onRowsChanged',
+            'change .pager .page': 'onPageChanged'
         };
         this.view = options.view;
         this.colspan = options.colspan;
     },
     tagName: 'td',
+    className: 'pager',
     template: _.template(
-        '<div class="bbGrid-pager">\
-            <a class="first<%if (page > 1) {%> active<%}%>"><i class="general foundicon-left-arrow"/></a>\
-            <a class="prev<%if (page > 1) {%> active<%}%>"><i id="icon-backward"/>Prev</a>\
-            <span class="bbGrid-page-counter"><%=dict.page%></span>\
-            <input class="bbGrid-page-input" value="<%=page%>" type="text" style="display:inline;">\
-            <span class="bbGrid-page-counter-right"> <%=dict.prep%> <%=cntpages%> </span>\
-            <a class="next<%if (page < cntpages) {%> active<%}%>"><i id="icon-forward"/>Next</a>\
-            <a class="last<%if (page < cntpages) {%> active<%}%>"><i id="icon-step-forward"/>Last</a>\
+        '<div>\
+            <a class="first<%if (page > 1) {%> active<%}%>">&lt;&lt;</a>&nbsp;\
+            <a class="prev<%if (page > 1) {%> active<%}%>">&lt;</a>&nbsp;\
+            <input class="input" value="<%=page%>" type="number" size="<%=inputMaxDigits%>" min="1" max="<%= cntpages %>" maxlength="<%=inputMaxDigits%>"> / \
+            <span class="total"> <%=cntpages%> </span>&nbsp;\
+            <a class="next<%if (page < cntpages) {%> active<%}%>">&gt;</a>&nbsp;\
+            <a class="last<%if (page < cntpages) {%> active<%}%>">&gt;&gt;</a>&nbsp;\
         <% if (rowlist) {%>\
-        <span class="bbGrid-pager-rowlist-label"><%=dict.rowsOnPage%>:</span>\
-        <select class="bbGrid-pager-rowlist">\
+        <span class="rowlist-label"><%=dict.rowsOnPage%>:</span>\
+        <select class="rowlist">\
             <% _.each(rowlist, function (val) {%>\
                 <option <% if (rows === val) {%>selected="selected"<%}%>><%=val%></option>\
             <%})%>\
@@ -48,12 +48,14 @@ bbGrid.PagerView = Backbone.View.extend({
             this.view.currPage = this.view.cntPages;
         }
         this.view.cntPages = this.view.cntPages || 1;
+        var inputMaxDigits = ('' + this.view.cntPages).length;
         pagerHtml = this.template({
                 dict: this.view.dict,
                 page: this.view.currPage,
                 cntpages: this.view.cntPages,
                 rows: this.view.rows,
-                rowlist: this.view.rowList || false
+                rowlist: this.view.rowList || false,
+                inputMaxDigits: inputMaxDigits
             });
         if (!this.view.rowList) {
             this.$el.addClass('bbGrid-pager-container-norowslist');

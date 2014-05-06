@@ -17,6 +17,7 @@ module.exports = function(grunt) {
         	  'src/bbGrid.PagerView.js',
         	  'src/bbGrid.SearchView.js',
         	  'src/bbGrid.NavView.js',
+            'node_modules/intl/Intl.js'
         ],
         dest: '<%= pkg.name %>.js'
       }

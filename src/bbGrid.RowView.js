@@ -8,6 +8,10 @@ bbGrid.RowView = Backbone.View.extend({
         this.on('select', this.setSelection);
         this.model.on('remove', this.modelRemoved, this);
         this.model.on('change', this.modelChanged, this);
+
+        // this requires Intl.DateFormat & NumberFormat, 
+        // so load the shim if the browser doesn't support it
+
     },
     tagName: 'tr',
     template: _.template(
@@ -105,16 +109,26 @@ bbGrid.RowView = Backbone.View.extend({
         return this.number(_.extend({style:'currency',currency:'USD'},options));
     },
     number: function(options) {
-        var formatter = new Intl.NumberFormat('en-US',_.extend({
+        var formatter = new (Intl || IntlPolyfill).NumberFormat('en-US',_.extend({
           minimumFractionDigits: 2,
           style: 'decimal'
         },options));
         return formatter.format(options.value);
     },
+    defaultDateFormat: {
+        year: "numeric", 
+        month: "2-digit", 
+        day: "2-digit", 
+        hour: "2-digit", 
+        minute: "2-digit", 
+        second: "2-digit",
+        hour12: false
+    },
     date: function(options) {
-        var format = _.has(options,'format') ? options.format : 'm/d/Y h:i:s';
+        var format = _.has(options,'format') ? options.format : this.defaultDateFormat;
         var dt = _.isString(options.value) ? new Date(options.value) : options.value; 
-        return date(format,dt);
+        var formatter = new (Intl || IntlPolyfill).DateTimeFormat(bbGrid.locale,format);
+        return formatter.format(dt);
     },
     modelRemoved: function (model) {
         var self = this,

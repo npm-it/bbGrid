@@ -14,6 +14,7 @@
 var bbGrid = this.bbGrid = {
     VERSION: '2.0.0',
     lang: 'en',
+    locale: 'en-US',
     setDict: function (lang) {
         if (bbGrid.Dict.hasOwnProperty(lang)) {
             this.lang = lang;

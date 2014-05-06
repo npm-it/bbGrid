@@ -61,13 +61,12 @@ bbGrid.View = Backbone.View.extend({
         this.enableFilter = _.compact(_.pluck(this.colModel, 'filter')).length > 0;
         this.autoFetch = !this.loadDynamic && this.autoFetch;
         if (this.autoFetch) {
-            console.log('autofetch, baby!');
-            console.info(this.collection);
             this.collection.fetch();
             this.autoFetch = false;
         }
 
         
+        // ?? todo - should this do this?
         if (this.loadDynamic) {
             _.extend(this.collection.prototype, {
                 parse: function (response) {
@@ -115,13 +114,16 @@ bbGrid.View = Backbone.View.extend({
             this.renderPage();
             this.toggleLoading(false);
             break;
+        case 'sync':
+            this.collection.fetch({reset:true});
+            break;
         default:
             break;
         }
     },
     CollectionEventHandler: function (eventName, model, collection, options) {
         var self = this;
-        //console.log('CollectionEventHandler: event is '+eventName);
+        if (eventName != 'add') console.log('CollectionEventHandler: event is '+eventName);
         switch (eventName) {
         case 'add':
             this.addModelsHandler(model, collection, options);
@@ -146,6 +148,7 @@ bbGrid.View = Backbone.View.extend({
             break;
         case 'sync':
             this.toggleLoading(false);
+            this.collection.refreshCollection();
             this.renderPage();
             break;
         case 'reset':

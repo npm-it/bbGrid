@@ -3,14 +3,13 @@ bbGrid.Collection = Backbone.Collection.extend({
     initialize: function(models, options) {
         console.log('** bbGrid.Collection.initialize() **');
     },
-    parse: function(collectionJson) {
-        console.log('** bbGrid.Collection.parse() **');
-        this.fullJson = collectionJson;
-        this.filtered = collectionJson;
-        return collectionJson;
-    },
     filtered: [],
     fullJson: [],
+    refreshCollection: function(e) {
+        console.log('** bbGrid.Collection.refreshCollection() **');
+        this.filtered = this.fullJson = this.toJSON();
+        console.info(this);
+    },
     filters: {},
     // should not be aware of columns and stuff
     filter: function (key, text, customFilter) {
