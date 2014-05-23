@@ -167,12 +167,10 @@ bbGrid.View = Backbone.View.extend({
         }
     },
     render: function () {
-        console.log('main:render()');
         if (this.width) {
             this.$el.css('width', this.width);
         }
         if (this.css && !this.cssInjected) {
-            console.log('Let us set the styles to '+this.css);
             // inject the styles
             switch (this.css) { 
                 case 'bootstrap': 

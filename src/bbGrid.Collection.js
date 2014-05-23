@@ -1,12 +1,10 @@
 /* main collection class - handles all filtering and searching */
 bbGrid.Collection = Backbone.Collection.extend({
     initialize: function(models, options) {
-        console.log('** bbGrid.Collection.initialize() **');
     },
     filtered: [],
     fullJson: [],
     refreshCollection: function(e) {
-        console.log('** bbGrid.Collection.refreshCollection() **');
         this.filtered = this.fullJson = this.toJSON();
         console.info(this);
     },
@@ -18,8 +16,6 @@ bbGrid.Collection = Backbone.Collection.extend({
 
         this.reset(this.fullJson,{silent:true}); // reset it to start off
         if (!_.isEmpty(this.filters)) {
-            console.log('going to filter on these');
-            console.info(this.filters);
             // how to reset it each time
             _.each(_.keys(this.filters), function(key) {
                 var match = this.filters[key];
