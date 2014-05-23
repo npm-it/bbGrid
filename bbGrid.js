@@ -133,7 +133,6 @@ bbGrid.View = Backbone.View.extend({
         // this results in infinte loop Backbone.View.apply(this, [options]);
         options.events = _.pick(options, _.union(this.viewOptions, _.values(options.events)));
         _.extend(this, options);
-        console.log(this);
         this.setDict(bbGrid.lang);
         this.on('all', this.EventHandler, this);
 
@@ -169,6 +168,11 @@ bbGrid.View = Backbone.View.extend({
         var initSortCol = _.find(this.colModel, function(col) { return col.defaultSort; } );
         if (initSortCol) {
             this.rsortBy(initSortCol);
+        }
+
+        this.cssInjected = false;
+        if (!this.css) {
+            this.css = 'default';
         }
 
         // go ahead and render the table here and then figure out adding the collection
@@ -288,8 +292,29 @@ bbGrid.View = Backbone.View.extend({
         if (this.width) {
             this.$el.css('width', this.width);
         }
+        if (this.css && !this.cssInjected) {
+            console.log('Let us set the styles to '+this.css);
+            // inject the styles
+            switch (this.css) { 
+                case 'bootstrap': 
+                case 'foundation':
+                    /*var $cssLink = $("<link>").attr({rel:'stylesheet',href:'//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css'});
+                    $("head").append($cssLink);*/
+                    this.addHeaderStyles();
+                    break;
+                case 'default':
+                    this.addDefaultStyles();
+                    break;
+            }
+            this.cssInjected = true;
+        }
         if (!this.$grid) {
             this.$grid = $('<table>');
+            if (this.css == 'bootstrap') {
+                this.$grid.attr({
+                    class:'table table-condensed table-striped table-bordered'
+                });
+            }
             if (this.caption) {
                 this.$grid.append('<caption>' + this.caption + '</caption>');
             }
@@ -631,38 +656,34 @@ bbGrid.View = Backbone.View.extend({
         var $el = $(event.currentTarget),
             className = $el.attr('class'),
             page;
-        switch (className) {
-        case 'bbGrid-page-input':
+        
+        if (className.indexOf('page') >= 0) {
             page = parseInt($el.val(), 10);
-            break;
-        case 'left':
+        } else if (className.indexOf('prev') >= 0) {
             page = this.currPage - 1;
-            break;
-        case 'right':
+        } else if (className.indexOf('next') >= 0) {
             page = this.currPage + 1;
-            break;
-        case 'first':
+        } else if (className.indexOf('first') >= 0) {
             page = 1;
-            break;
-        case 'last':
+        } else if (className.indexOf('last') >= 0) {
             page = this.cntPages;
-            break;
-        default:
+        } else {
             page = this.currPage;
         }
         if (page > this.cntPages || page <= 0) {
             return false;
         }
+        var $pagerCell = $("div.bbGrid table tfoot td.pager",this.$el);
         if (this.currPage !== page) {
             this.currPage = page;
-            $('div.bbGrid-pager li', this.$el).removeClass('active');
-            $('.bbGrid-page-input', this.$pager).val(this.currPage);
+            $pagerCell.find('a').removeClass('active');
+            $pagerCell.find('input').val(this.currPage);
 
-            if (this.currPage === 1) {
-                $('div.bbGrid-pager a.left,.first', this.$el).parent().addClass('active');
+            if (this.currPage > 1) {
+                $pagerCell.find('a.prev,.first').removeClass('active');
             }
-            if (this.currPage >= this.cntPages) {
-                $('div.bbGrid-pager a.right,.last', this.$el).parent().addClass('active');
+            if (this.currPage < this.cntPages) {
+                $pagerCell.find('a.next,.last').addClass('active');
             }
             this.renderPage({silent: !this.loadDynamic});
         }
@@ -675,7 +696,58 @@ bbGrid.View = Backbone.View.extend({
     getSelectedModels: function () {
         var self = this;
         return _.map(this.selectedRows, function (id) { return self.collection.get(id); });
-    }
+    },
+    addHeaderStyles: function() {
+        var $style = $("<style>").attr({type:"text/css"}).html(this.defaultHeadStyles);
+        if (this.css == 'foundation') $style.append(this.foundationStyles);
+        else if (this.css == 'bootstrap') $style.append(this.bootstrapStyles);
+        $("head").append($style);
+    },
+    addDefaultStyles: function() {
+        var $style = $("<style>").attr({type:"text/css"}).html(this.defaultTableStyles).append(this.defaultHeadStyles);
+        $("head").append($style);
+    },
+    foundationStyles: '.bbGrid table thead tr { border-bottom: thin solid #ccc; }\
+        .bbGrid table tr th, .bbGrid table tr td { padding-left: 1.5rem; padding-right: 1.5rem }\
+        .bbGrid table thead label, .bbGrid table thead select, .bbGrid table thead input { margin-bottom: 1px; }\
+        .bbGrid table tfoot { border-top: thin solid #ccc; }\
+        .bbGrid table tfoot tr td.pager input.page { display: inline; width: 4rem; text-align: right; margin-bottom:1px; }\
+        .bbGrid table tfoot tr td.pager a.button { margin-bottom:1px; }\
+        .bbGrid table tfoot tr td.pager a.button:hover { text-decoration:none; }',
+    bootstrapStyles: '',
+    defaultTableStyles: '.bbGrid table { border: thin solid #ccc; border-collapse: collapse; font-family: sans-serif; }\
+        .bbGrid table tbody tr:nth-child(odd) {\
+            background-color: #efefef;\
+        }\
+        .bbGrid table thead tr th, .bbGrid table tbody tr td {\
+            padding: .35rem;\
+        }\
+        .bbGrid table thead { border-bottom: thin solid #ccc;}',
+    defaultHeadStyles: '.bbGrid table thead tr th.sortable { cursor: pointer; }\
+        .bbGrid table thead tr th.sortable span.arrows { float: left; margin-right: 0.25em; }\
+        .bbGrid table thead tr th.sortable span.arrows i { width: 0; height: 0; display: block; }\
+        .bbGrid table thead tr th.sortable span.arrows i.up { \
+            border-left: .25em solid transparent;\
+            border-right: .25em solid transparent;\
+            border-bottom: .35em solid;\
+            margin-bottom: 1px;\
+        } \
+        .bbGrid table thead tr th.sortable.sorted.asc span.arrows i.down { \
+            border-top-color: transparent;\
+        }\
+        .bbGrid table thead tr th.sortable span.arrows i.down { \
+            border-left: .25em solid transparent;\
+            border-right: .25em solid transparent;\
+            border-top: .35em solid;\
+        } \
+        .bbGrid table thead tr th.sortable.sorted.desc span.arrows i.up { \
+            border-bottom-color: transparent;\
+        }\
+        .bbGrid table tfoot tr td.pager a:not(.active) { \
+            text-decoration: none; \
+            color: #777;\
+            cursor: default;\
+        }'
 });
 
 ;bbGrid.TheadView = Backbone.View.extend({
@@ -706,13 +778,14 @@ bbGrid.View = Backbone.View.extend({
     },
     render: function () {
         var cols, theadHtml;
-        if (!this.$headHolder) {
-            this.$headHolder = $('<tr/>', {'class': 'bbGrid-grid-head-holder'});
-            this.$el.append(this.$headHolder);
-        }
         cols = _.filter(this.view.colModel, function (col) {return !col.hidden; });
         cols = _.map(cols, function (col) { col.label = col.label || col.property; return col; });
         this.view.colLength = cols.length + (this.view.multiselect ? 1 : 0) + (this.view.subgrid ? 1 : 0);
+
+        if (!this.$columnHeaders) {
+            this.$columnHeaders = $('<tr/>', {'class': 'column-headers'});
+            this.$el.append(this.$columnHeaders);
+        }
         theadHtml = this.template({
             isMultiselect: this.view.multiselect,
             isContainSubgrid: this.view.subgrid,
@@ -720,12 +793,326 @@ bbGrid.View = Backbone.View.extend({
             sortCol: this.view.sortName,
             sortOrder: this.view.sortOrder
         });
-        this.$headHolder.html(theadHtml);
+        this.$columnHeaders.html(theadHtml);
+
+        if (!this.$searchRow) { 
+            this.$searchRow = $('<td/>',{colspan:this.view.colLength}); // bootstrap or foundation styling
+            this.$el.prepend($('<tr/>').html(this.$searchRow));
+        }
+
+        if (!this.view.$rowCountSelector) {
+            this.rowCountSelector = new bbGrid.RowCountView({view:this.view});
+            this.view.$rowCountSelector = this.rowCountSelector.render();
+            switch (this.view.css) {
+                case 'bootstrap':
+                    this.view.$rowCountSelector.addClass('pull-left');
+                    break;
+                case 'foundation':
+                    this.view.$rowCountSelector.addClass('left small-4');
+                    break;
+                default:
+                    this.view.$rowCountSelector.css({float:'left'});
+            } 
+            this.$searchRow.append(this.view.$rowCountSelector);
+        }
+
+        if (!this.view.$searchBar && this.view.enableSearch) {
+            this.searchBar = new bbGrid.SearchView({view: this.view});
+            this.view.$searchBar = this.searchBar.render();
+            switch (this.view.css) {
+                case 'bootstrap':
+                    this.view.$searchBar.addClass('pull-right');
+                    break;
+                case 'foundation':
+                    this.view.$searchBar.addClass('right');
+                    break;
+                default:
+                    this.view.$searchBar.css({float:'right'});
+            } 
+            this.$searchRow.append(this.view.$searchBar);
+        }
+
         if (!this.view.$filterBar && this.view.enableFilter) {
             this.view.filterBar = new bbGrid.FilterView({ view: this.view });
             this.view.$filterBar = this.view.filterBar.render();
             this.$el.append(this.view.$filterBar);
         }
+        return this.$el;
+    }
+});
+
+;bbGrid.FilterView = Backbone.View.extend({
+    initialize: function (options) {
+        this.events = {
+            'keyup input[name=filter]': 'onFilter',
+            'change select[name=filter]': 'onFilter'
+        };
+        this.view = options.view;
+        options.view.filterOptions = {};
+        this.rendered = false;
+        if (this.view.css) {
+            switch(this.view.css) {
+                case 'bootstrap': 
+                    this.templateBody  = this.bootstrapTemplate;
+                    break;
+                case 'foundation': 
+                    this.templateBody  = this.foundationTemplate;
+                    break;
+                default:
+                    this.templateBody  = this.defaultTemplate;
+            }
+        } else {
+            this.templateBody  = this.defaultTemplate;
+        }
+
+    },
+    tagName: 'tr',
+    defaultTemplate: '<% if (isMultiselect) {%>\
+            <td></td>\
+        <%} if (isContainSubgrid) {%>\
+            <td></td>\
+        <% } %>\
+        <% console.log("***"); console.info(filterOptions); _.each(cols, function (col) {%>\
+            <td>\
+                <%if (col.filter) {%>\
+                    <<% if (col.filterType === "input") \
+                        {%>input<%}else{%>select<%\
+                        }%> class="<%if (col.filterProperty) {%><%=col.filterProperty%><%}else{%><%=col.property %><%}%>" \
+                        name="filter" type="text" value="<%=filterOptions[col.property]%>">\
+                <% if (col.filterType !== "input") {%>\
+                <option value=""><%=dict.all%></option>\
+                    <% _.each(options[col.property], function (option) {%>\
+                        <option value="<%=option%>"<% if (filterOptions[col.property] == option) print(\' selected\'); %>><%=option%></option>\
+                    <%})%>\
+                </select><%}%>\
+                <%}%>\
+            </td>\
+        <%})%>', 
+    bootstrapTemplate: '<% if (isMultiselect) {%>\
+            <td></td>\
+        <%} if (isContainSubgrid) {%>\
+            <td></td>\
+        <% } %>\
+        <% console.log("***"); console.info(filterOptions); _.each(cols, function (col) {%>\
+            <td>\
+                <%if (col.filter) {%>\
+                    <<% if (col.filterType === "input") \
+                        {%>input<%}else{%>select<%\
+                        }%> class="form-control input-sm <%if (col.filterProperty) {%><%=col.filterProperty%><%}else{%><%=col.property %><%}%>" \
+                        name="filter" type="text" value="<%=filterOptions[col.property]%>">\
+                <% if (col.filterType !== "input") {%>\
+                <option value=""><%=dict.all%></option>\
+                    <% _.each(options[col.property], function (option) {%>\
+                        <option value="<%=option%>"<% if (filterOptions[col.property] == option) print(\' selected\'); %>><%=option%></option>\
+                    <%})%>\
+                </select><%}%>\
+                <%}%>\
+            </td>\
+        <%})%>', 
+    foundationTemplate: '<% if (isMultiselect) {%>\
+            <td></td>\
+        <%} if (isContainSubgrid) {%>\
+            <td></td>\
+        <% } %>\
+        <% console.log("***"); console.info(filterOptions); _.each(cols, function (col) {%>\
+            <td>\
+                <%if (col.filter) {%>\
+                    <<% if (col.filterType === "input") \
+                        {%>input<%}else{%>select<%\
+                        }%> class="<%if (col.filterProperty) {%><%=col.filterProperty%><%}else{%><%=col.property %><%}%>" \
+                        name="filter" type="text" value="<%=filterOptions[col.property]%>">\
+                <% if (col.filterType !== "input") {%>\
+                <option value=""><%=dict.all%></option>\
+                    <% _.each(options[col.property], function (option) {%>\
+                        <option value="<%=option%>"<% if (filterOptions[col.property] == option) print(\' selected\'); %>><%=option%></option>\
+                    <%})%>\
+                </select><%}%>\
+                <%}%>\
+            </td>\
+        <%})%>', 
+    
+    onFilter: function (e) {
+        var $f = $(e.currentTarget);
+        var key = $f.attr('class');
+        if (this.view.css == 'bootstrap') key = key.replace("form-control input-sm","").trim();
+        var text = $.trim($f.val());
+        this.view.collection.filter(key,text);
+        /*
+        var text, self = this,
+            collection = new Backbone.Collection(this.view.collection.models);
+        this.view.tfoot.searchBar.render(); // TODO: why?
+        this.view.setCollection(collection);
+        _.each($('*[name=filter]', this.$el), function (el) {
+            text = $.trim($(el).val());
+            self.view.filterOptions[el.className] = text;
+        });
+        if (_.keys(this.view.filterOptions).length) {
+            self.filter(collection, _.clone(this.view.filterOptions));
+        }
+        this.view.trigger('filter');
+        */
+    },
+    filter: function (collection, options) {
+        var keys = _.keys(options), option, filterCol,
+            key = _.first(keys),
+            text = options[key];
+        if (!keys.length) {
+            return collection;
+        }
+        delete options[key];
+        if (text.length > 0) {
+            // figure out which column we are filtering on
+            filterCol = _.findWhere(this.view.colModel,{filterProperty:key});
+            if (filterCol) filterCol.currentFilter = text;
+            collection.reset(_.filter(collection.models, function (model) {
+                if (filterCol && filterCol.customFilter) return filterCol.customFilter(model,text);
+                option = model.get(key);
+                if (option) {
+                    return ("" + option).toLowerCase().indexOf(text.toLowerCase()) >= 0;
+                } else {
+                    return false;
+                }
+            }), {silent: true});
+        }
+        this.filter(collection, options); // call it again til we've gone through all of 'em
+    },
+    render: function () {
+        if (this.rendered) return this.$el;
+        var options = {}, self = this, filterBarHtml;
+        _.each(this.view.colModel, function (col) {
+            if (col.filter) {
+                if (col.filterOptions) {
+                    options[col.property] = col.filterOptions;
+                } else { 
+                    var list = _.uniq(self.view.collection.pluck(col.filterProperty || col.property));
+                    list.sort();
+                    options[col.property] = list;
+                }
+            }
+        });
+        filterBarHtml = _.template(this.templateBody,{
+            dict: this.view.dict,
+            isMultiselect: this.view.multiselect,
+            isContainSubgrid: this.view.subgrid,
+            filterOptions: this.view.filterOptions,
+            cols: _.filter(this.view.colModel, function (col) {return !col.hidden; }),
+            options: options
+        }, bbGrid.templateSettings);
+        this.$el.html(filterBarHtml);
+        this.rendered = true;
+        return this.$el;
+    }
+});    
+
+;/*
+ * This encapsulates the search field and its events
+ */
+bbGrid.SearchView = Backbone.View.extend({
+    initialize: function (options) {
+        this.events = {
+            'keyup input[name=search]': 'onSearch',
+        };
+        this.view = options.view;
+        if (this.view.css) {
+            switch(this.view.css) {
+                case 'bootstrap': 
+                    this.templateBody  = this.bootstrapTemplate;
+                    break;
+                case 'foundation': 
+                    this.templateBody  = this.foundationTemplate;
+                    break;
+                default:
+                    this.templateBody  = this.defaultTemplate;
+            }
+        } else {
+            this.templateBody  = this.defaultTemplate;
+        }
+
+
+    },
+    //tagName: 'tr',
+    defaultTemplate: '<input name="search" type="text" placeholder="<%=dict.search%>">',
+    bootstrapTemplate: '<input name="search" type="text" placeholder="<%=dict.search%>" class="form-control input-med">',
+    foundationTemplate: '<input name="search" type="text" placeholder="<%=dict.search%>">',
+    onSearch: function (event) {
+        var self = this,
+            $el = $(event.target),
+            text = $el.val();
+        console.log('search on "'+text+'"');
+        this.view.collection.search(text);
+        //this.view.collection.trigger('reset');
+    },
+    render: function () {
+        var searchBarHtml = _.template(this.templateBody,{
+            dict: this.view.dict,
+        }, bbGrid.templateSettings);
+        this.$el.html(searchBarHtml);//.attr({colspan:this.colspan});
+        return this.$el;
+    }
+});
+
+;/*
+ * This encapsulates the search field and its events
+ */
+bbGrid.RowCountView = Backbone.View.extend({
+    initialize: function (options) {
+        this.events = {
+            'change .rowlist': 'onRowsChanged',
+        };
+        this.view = options.view;
+        if (this.view.css) {
+            switch(this.view.css) {
+                case 'bootstrap': 
+                    this.templateBody  = this.bootstrapTemplate;
+                    break;
+                case 'foundation': 
+                    this.templateBody  = this.foundationTemplate;
+                    break;
+                default:
+                    this.templateBody  = this.defaultTemplate;
+            }
+        } else {
+            this.templateBody  = this.defaultTemplate;
+        }
+
+    },
+    defaultTemplate: '<% if (rowlist) {%>\
+        <span class="rowlist-label"><%=dict.rowsOnPage%>:</span>\
+        <select class="rowlist">\
+            <% _.each(rowlist, function (val) {%>\
+                <option <% if (rows === val) {%>selected="selected"<%}%>><%=val%></option>\
+            <%})%>\
+        </select>\
+        <%}%>',
+    bootstrapTemplate: '<% if (rowlist) {%>\
+        <select class="rowlist form-control input-sm" style="display:inline;">\
+            <% _.each(rowlist, function (val) {%>\
+                <option <% if (rows === val) {%>selected="selected"<%}%>><%=val%></option>\
+            <%})%>\
+        </select>\
+        <%}%>',
+    foundationTemplate: '<% if (rowlist) {%>\
+        <div class="row"><div class="small-3 columns">\
+            <label class="rowlist-label right inline"><%=dict.rowsOnPage%>:</label>\
+        </div><div class="small-9 columns">\
+        <select class="rowlist">\
+            <% _.each(rowlist, function (val) {%>\
+                <option <% if (rows === val) {%>selected="selected"<%}%>><%=val%></option>\
+            <%})%>\
+        </select></div></div>\
+        <%}%>',
+    onRowsChanged: function (event) {
+        this.view.rows = parseInt($(event.target).val(), 10);
+        this.render();
+        this.view.render();
+    },
+    render: function () {
+        var rowCountHtml = _.template(this.templateBody,{
+            dict: this.view.dict,
+            rows: this.view.rows,
+            rowlist: this.view.rowList || false,
+        });
+        this.$el.html(rowCountHtml);//.attr({colspan:this.colspan});
         return this.$el;
     }
 });
@@ -925,139 +1312,27 @@ bbGrid.View = Backbone.View.extend({
         }
     },
 });
-;bbGrid.FilterView = Backbone.View.extend({
-    initialize: function (options) {
-        this.events = {
-            'keyup input[name=filter]': 'onFilter',
-            'change select[name=filter]': 'onFilter'
-        };
-        this.view = options.view;
-        options.view.filterOptions = {};
-        this.rendered = false;
-    },
-    tagName: 'tr',
-    template: _.template(
-        '<% if (isMultiselect) {%>\
-            <td></td>\
-        <%} if (isContainSubgrid) {%>\
-            <td></td>\
-        <% } %>\
-        <% console.log("***"); console.info(filterOptions); _.each(cols, function (col) {%>\
-            <td>\
-                <%if (col.filter) {%>\
-                    <<% if (col.filterType === "input") \
-                        {%>input<%}else{%>select<%\
-                        }%> class="<%if (col.filterProperty) {%><%=col.filterProperty%><%}else{%><%=col.property %><%}%>" \
-                        name="filter" type="text" value="<%=filterOptions[col.property]%>">\
-                <% if (col.filterType !== "input") {%>\
-                <option value=""><%=dict.all%></option>\
-                    <% _.each(options[col.property], function (option) {%>\
-                        <option value="<%=option%>"<% if (filterOptions[col.property] == option) print(\' selected\'); %>><%=option%></option>\
-                    <%})%>\
-                </select><%}%>\
-                <%}%>\
-            </td>\
-        <%})%>', null, bbGrid.templateSettings),
-    onFilter: function (e) {
-        var $f = $(e.currentTarget);
-        var key = $f.attr('class');
-        var text = $.trim($f.val());
-        this.view.collection.filter(key,text);
-        /*
-        var text, self = this,
-            collection = new Backbone.Collection(this.view.collection.models);
-        this.view.tfoot.searchBar.render(); // TODO: why?
-        this.view.setCollection(collection);
-        _.each($('*[name=filter]', this.$el), function (el) {
-            text = $.trim($(el).val());
-            self.view.filterOptions[el.className] = text;
-        });
-        if (_.keys(this.view.filterOptions).length) {
-            self.filter(collection, _.clone(this.view.filterOptions));
-        }
-        this.view.trigger('filter');
-        */
-    },
-    filter: function (collection, options) {
-        var keys = _.keys(options), option, filterCol,
-            key = _.first(keys),
-            text = options[key];
-        if (!keys.length) {
-            return collection;
-        }
-        delete options[key];
-        if (text.length > 0) {
-            // figure out which column we are filtering on
-            filterCol = _.findWhere(this.view.colModel,{filterProperty:key});
-            if (filterCol) filterCol.currentFilter = text;
-            collection.reset(_.filter(collection.models, function (model) {
-                if (filterCol && filterCol.customFilter) return filterCol.customFilter(model,text);
-                option = model.get(key);
-                if (option) {
-                    return ("" + option).toLowerCase().indexOf(text.toLowerCase()) >= 0;
-                } else {
-                    return false;
-                }
-            }), {silent: true});
-        }
-        this.filter(collection, options); // call it again til we've gone through all of 'em
-    },
-    render: function () {
-        if (this.rendered) return this.$el;
-        var options = {}, self = this, filterBarHtml;
-        _.each(this.view.colModel, function (col) {
-            if (col.filter) {
-                if (col.filterOptions) {
-                    options[col.property] = col.filterOptions;
-                } else { 
-                    var list = _.uniq(self.view.collection.pluck(col.filterProperty || col.property));
-                    list.sort();
-                    options[col.property] = list;
-                }
-            }
-        });
-        filterBarHtml = this.template({
-            dict: this.view.dict,
-            isMultiselect: this.view.multiselect,
-            isContainSubgrid: this.view.subgrid,
-            filterOptions: this.view.filterOptions,
-            cols: _.filter(this.view.colModel, function (col) {return !col.hidden; }),
-            options: options
-        });
-        this.$el.html(filterBarHtml);
-        this.rendered = true;
-        return this.$el;
-    }
-});    
-
 ;bbGrid.TfootView = Backbone.View.extend({
     initialize: function (options) {
         this.view = options.view;
     },
     tagName: 'tfoot',
     render: function () {
-        var cols, leftCols, rightCols;
+        var cols, leftCols;//, rightCols;
         cols = _.filter(this.view.colModel, function (col) {return !col.hidden; });
         cols = _.map(cols, function (col) { col.label = col.label || col.property; return col; });
         this.view.colLength = cols.length + (this.view.multiselect ? 1 : 0) + (this.view.subgrid ? 1 : 0);
-        leftCols = Math.ceil( this.view.colLength / 2 );
-        rightCols = this.view.colLength - leftCols;
-
-        // PUT THE FILTER & SEARCH IN A NEW ROlee
+        //leftCols = Math.ceil( this.view.colLength / 2 );
+        //rightCols = this.view.colLength - leftCols;
 
         if (!this.$footHolder) {
             this.$footHolder = $('<tr/>');
             this.$el.append(this.$footHolder);
         }
         if (!this.view.$pager && this.view.rows) {
-            this.view.pager = new bbGrid.PagerView({ view: this.view, colspan: leftCols });
+            this.view.pager = new bbGrid.PagerView({ view: this.view, colspan: this.view.colLength });
             this.view.$pager = this.view.pager.render();
             this.$footHolder.append(this.view.$pager);
-        }
-        if (!this.$searchBar && this.view.enableSearch) {
-            this.searchBar = new bbGrid.SearchView({view: this.view, colspan: rightCols });
-            this.$searchBar = this.searchBar.render();
-            this.$footHolder.append(this.$searchBar);
         }
         return this.$el;
     }
@@ -1067,39 +1342,58 @@ bbGrid.View = Backbone.View.extend({
 
     initialize: function (options) {
         this.events = {
-            'click a': 'onPageChanged',
-            'change .pager .rowlist': 'onRowsChanged',
-            'change .pager .page': 'onPageChanged'
+            'click a.active': 'onPageChanged',
+            'click a:not(.active)': 'noOp',
+            'change .page': 'onPageChanged'
         };
         this.view = options.view;
         this.colspan = options.colspan;
+        if (this.view.css) {
+            switch(this.view.css) {
+                case 'bootstrap': 
+                    this.templateBody  = this.bootstrapTemplate;
+                    break;
+                case 'foundation': 
+                    this.templateBody  = this.foundationTemplate;
+                    break;
+                default:
+                    this.templateBody  = this.defaultTemplate;
+            }
+        } else {
+            this.templateBody  = this.defaultTemplate;
+        }
     },
     tagName: 'td',
     className: 'pager',
-    template: _.template(
+    defaultTemplate: 
         '<div>\
-            <a class="first<%if (page > 1) {%> active<%}%>">&lt;&lt;</a>&nbsp;\
-            <a class="prev<%if (page > 1) {%> active<%}%>">&lt;</a>&nbsp;\
-            <input class="input" value="<%=page%>" type="number" size="<%=inputMaxDigits%>" min="1" max="<%= cntpages %>" maxlength="<%=inputMaxDigits%>"> / \
+            <a href="#" class="first<%if (page > 1) {%> active<%}%>">&lt;&lt;</a>&nbsp;\
+            <a href="#" class="prev<%if (page > 1) {%> active<%}%>">&lt;</a>&nbsp;\
+            <input class="page" value="<%=page%>" type="number" size="<%=inputMaxDigits%>" min="1" max="<%= cntpages %>" maxlength="<%=inputMaxDigits%>"> / \
             <span class="total"> <%=cntpages%> </span>&nbsp;\
-            <a class="next<%if (page < cntpages) {%> active<%}%>">&gt;</a>&nbsp;\
-            <a class="last<%if (page < cntpages) {%> active<%}%>">&gt;&gt;</a>&nbsp;\
-        <% if (rowlist) {%>\
-        <span class="rowlist-label"><%=dict.rowsOnPage%>:</span>\
-        <select class="rowlist">\
-            <% _.each(rowlist, function (val) {%>\
-                <option <% if (rows === val) {%>selected="selected"<%}%>><%=val%></option>\
-            <%})%>\
-        </select>\
-        <%}%>\
-        </div>\
-        ', null, bbGrid.templateSettings
-
-    ),
-    onRowsChanged: function (event) {
-        this.view.rows = parseInt($(event.target).val(), 10);
-        this.render();
-        this.view.render();
+            <a href="#" class="next<%if (page < cntpages) {%> active<%}%>">&gt;</a>&nbsp;\
+            <a href="#" class="last<%if (page < cntpages) {%> active<%}%>">&gt;&gt;</a>&nbsp;\
+        </div>',
+    bootstrapTemplate: 
+        '<div>\
+            <a href="#" class="first btn btn-sm btn-default<%if (page > 1) {%> active<%}%>">&lt;&lt;</a>&nbsp;\
+            <a href="#" class="prev btn btn-sm btn-default<%if (page > 1) {%> active<%}%>">&lt;</a>&nbsp;\
+            <input class="page input-sm" value="<%=page%>" type="number" size="<%=inputMaxDigits%>" min="1" max="<%= cntpages %>" maxlength="<%=inputMaxDigits%>" style="text-align:right;width:5em;"> / \
+            <span class="total"> <%=cntpages%> </span>&nbsp;\
+            <a href="#" class="next btn btn-sm btn-default<%if (page < cntpages) {%> active<%}%>">&gt;</a>&nbsp;\
+            <a href="#" class="last btn btn-sm btn-default<%if (page < cntpages) {%> active<%}%>">&gt;&gt;</a>&nbsp;\
+        </div>',
+    foundationTemplate: 
+        '<div>\
+            <a href="#" class="first<%if (page > 1) {%> active<%}%> button tiny">&lt;&lt;</a>&nbsp;\
+            <a href="#" class="prev<%if (page > 1) {%> active<%}%> button tiny">&lt;</a>&nbsp;\
+            <input class="page" value="<%=page%>" type="number" size="<%=inputMaxDigits%>" min="1" max="<%= cntpages %>" maxlength="<%=inputMaxDigits%>"> / \
+            <span class="total"> <%=cntpages%> </span>&nbsp;\
+            <a href="#" class="next<%if (page < cntpages) {%> active<%}%> button tiny">&gt;</a>&nbsp;\
+            <a href="#" class="last<%if (page < cntpages) {%> active<%}%> button tiny">&gt;&gt;</a>&nbsp;\
+        </div>',
+    noOp: function(e) {
+        e.preventDefault();   
     },
     onPageChanged: function (event) {
         this.view.trigger('pageChanged', event);
@@ -1114,53 +1408,16 @@ bbGrid.View = Backbone.View.extend({
         }
         this.view.cntPages = this.view.cntPages || 1;
         var inputMaxDigits = ('' + this.view.cntPages).length;
-        pagerHtml = this.template({
+        pagerHtml = _.template(this.templateBody,{
                 dict: this.view.dict,
                 page: this.view.currPage,
                 cntpages: this.view.cntPages,
-                rows: this.view.rows,
-                rowlist: this.view.rowList || false,
                 inputMaxDigits: inputMaxDigits
-            });
-        if (!this.view.rowList) {
-            this.$el.addClass('bbGrid-pager-container-norowslist');
-        }
+            },bbGrid.templateSettings);
         this.$el.html(pagerHtml).attr({colspan:this.colspan});
     },
     render: function () {
         this.initPager();
-        return this.$el;
-    }
-});
-
-;/*
- * This encapsulates the search field and its events
- */
-bbGrid.SearchView = Backbone.View.extend({
-    initialize: function (options) {
-        this.events = {
-            'keyup input[name=search]': 'onSearch',
-        };
-        this.grid = options.view;
-        this.colspan = options.colspan;
-    },
-    tagName: 'td',
-    template: _.template(
-        '<input name="search" type="text" placeholder="<%=dict.search%>">', null, bbGrid.templateSettings
-    ),
-    onSearch: function (event) {
-        var self = this,
-            $el = $(event.target),
-            text = $el.val();
-        console.log('search on "'+text+'"');
-        this.grid.collection.search(text);
-        //this.view.collection.trigger('reset');
-    },
-    render: function () {
-        var searchBarHtml = this.template({
-            dict: this.grid.dict,
-        });
-        this.$el.html(searchBarHtml).attr({colspan:this.colspan});
         return this.$el;
     }
 });

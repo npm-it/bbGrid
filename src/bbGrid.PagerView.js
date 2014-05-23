@@ -2,39 +2,58 @@ bbGrid.PagerView = Backbone.View.extend({
 
     initialize: function (options) {
         this.events = {
-            'click a': 'onPageChanged',
-            'change .pager .rowlist': 'onRowsChanged',
-            'change .pager .page': 'onPageChanged'
+            'click a.active': 'onPageChanged',
+            'click a:not(.active)': 'noOp',
+            'change .page': 'onPageChanged'
         };
         this.view = options.view;
         this.colspan = options.colspan;
+        if (this.view.css) {
+            switch(this.view.css) {
+                case 'bootstrap': 
+                    this.templateBody  = this.bootstrapTemplate;
+                    break;
+                case 'foundation': 
+                    this.templateBody  = this.foundationTemplate;
+                    break;
+                default:
+                    this.templateBody  = this.defaultTemplate;
+            }
+        } else {
+            this.templateBody  = this.defaultTemplate;
+        }
     },
     tagName: 'td',
     className: 'pager',
-    template: _.template(
+    defaultTemplate: 
         '<div>\
-            <a class="first<%if (page > 1) {%> active<%}%>">&lt;&lt;</a>&nbsp;\
-            <a class="prev<%if (page > 1) {%> active<%}%>">&lt;</a>&nbsp;\
-            <input class="input" value="<%=page%>" type="number" size="<%=inputMaxDigits%>" min="1" max="<%= cntpages %>" maxlength="<%=inputMaxDigits%>"> / \
+            <a href="#" class="first<%if (page > 1) {%> active<%}%>">&lt;&lt;</a>&nbsp;\
+            <a href="#" class="prev<%if (page > 1) {%> active<%}%>">&lt;</a>&nbsp;\
+            <input class="page" value="<%=page%>" type="number" size="<%=inputMaxDigits%>" min="1" max="<%= cntpages %>" maxlength="<%=inputMaxDigits%>"> / \
             <span class="total"> <%=cntpages%> </span>&nbsp;\
-            <a class="next<%if (page < cntpages) {%> active<%}%>">&gt;</a>&nbsp;\
-            <a class="last<%if (page < cntpages) {%> active<%}%>">&gt;&gt;</a>&nbsp;\
-        <% if (rowlist) {%>\
-        <span class="rowlist-label"><%=dict.rowsOnPage%>:</span>\
-        <select class="rowlist">\
-            <% _.each(rowlist, function (val) {%>\
-                <option <% if (rows === val) {%>selected="selected"<%}%>><%=val%></option>\
-            <%})%>\
-        </select>\
-        <%}%>\
-        </div>\
-        ', null, bbGrid.templateSettings
-
-    ),
-    onRowsChanged: function (event) {
-        this.view.rows = parseInt($(event.target).val(), 10);
-        this.render();
-        this.view.render();
+            <a href="#" class="next<%if (page < cntpages) {%> active<%}%>">&gt;</a>&nbsp;\
+            <a href="#" class="last<%if (page < cntpages) {%> active<%}%>">&gt;&gt;</a>&nbsp;\
+        </div>',
+    bootstrapTemplate: 
+        '<div>\
+            <a href="#" class="first btn btn-sm btn-default<%if (page > 1) {%> active<%}%>">&lt;&lt;</a>&nbsp;\
+            <a href="#" class="prev btn btn-sm btn-default<%if (page > 1) {%> active<%}%>">&lt;</a>&nbsp;\
+            <input class="page input-sm" value="<%=page%>" type="number" size="<%=inputMaxDigits%>" min="1" max="<%= cntpages %>" maxlength="<%=inputMaxDigits%>" style="text-align:right;width:5em;"> / \
+            <span class="total"> <%=cntpages%> </span>&nbsp;\
+            <a href="#" class="next btn btn-sm btn-default<%if (page < cntpages) {%> active<%}%>">&gt;</a>&nbsp;\
+            <a href="#" class="last btn btn-sm btn-default<%if (page < cntpages) {%> active<%}%>">&gt;&gt;</a>&nbsp;\
+        </div>',
+    foundationTemplate: 
+        '<div>\
+            <a href="#" class="first<%if (page > 1) {%> active<%}%> button tiny">&lt;&lt;</a>&nbsp;\
+            <a href="#" class="prev<%if (page > 1) {%> active<%}%> button tiny">&lt;</a>&nbsp;\
+            <input class="page" value="<%=page%>" type="number" size="<%=inputMaxDigits%>" min="1" max="<%= cntpages %>" maxlength="<%=inputMaxDigits%>"> / \
+            <span class="total"> <%=cntpages%> </span>&nbsp;\
+            <a href="#" class="next<%if (page < cntpages) {%> active<%}%> button tiny">&gt;</a>&nbsp;\
+            <a href="#" class="last<%if (page < cntpages) {%> active<%}%> button tiny">&gt;&gt;</a>&nbsp;\
+        </div>',
+    noOp: function(e) {
+        e.preventDefault();   
     },
     onPageChanged: function (event) {
         this.view.trigger('pageChanged', event);
@@ -49,17 +68,12 @@ bbGrid.PagerView = Backbone.View.extend({
         }
         this.view.cntPages = this.view.cntPages || 1;
         var inputMaxDigits = ('' + this.view.cntPages).length;
-        pagerHtml = this.template({
+        pagerHtml = _.template(this.templateBody,{
                 dict: this.view.dict,
                 page: this.view.currPage,
                 cntpages: this.view.cntPages,
-                rows: this.view.rows,
-                rowlist: this.view.rowList || false,
                 inputMaxDigits: inputMaxDigits
-            });
-        if (!this.view.rowList) {
-            this.$el.addClass('bbGrid-pager-container-norowslist');
-        }
+            },bbGrid.templateSettings);
         this.$el.html(pagerHtml).attr({colspan:this.colspan});
     },
     render: function () {

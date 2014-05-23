@@ -7,10 +7,24 @@ bbGrid.FilterView = Backbone.View.extend({
         this.view = options.view;
         options.view.filterOptions = {};
         this.rendered = false;
+        if (this.view.css) {
+            switch(this.view.css) {
+                case 'bootstrap': 
+                    this.templateBody  = this.bootstrapTemplate;
+                    break;
+                case 'foundation': 
+                    this.templateBody  = this.foundationTemplate;
+                    break;
+                default:
+                    this.templateBody  = this.defaultTemplate;
+            }
+        } else {
+            this.templateBody  = this.defaultTemplate;
+        }
+
     },
     tagName: 'tr',
-    template: _.template(
-        '<% if (isMultiselect) {%>\
+    defaultTemplate: '<% if (isMultiselect) {%>\
             <td></td>\
         <%} if (isContainSubgrid) {%>\
             <td></td>\
@@ -30,10 +44,54 @@ bbGrid.FilterView = Backbone.View.extend({
                 </select><%}%>\
                 <%}%>\
             </td>\
-        <%})%>', null, bbGrid.templateSettings),
+        <%})%>', 
+    bootstrapTemplate: '<% if (isMultiselect) {%>\
+            <td></td>\
+        <%} if (isContainSubgrid) {%>\
+            <td></td>\
+        <% } %>\
+        <% console.log("***"); console.info(filterOptions); _.each(cols, function (col) {%>\
+            <td>\
+                <%if (col.filter) {%>\
+                    <<% if (col.filterType === "input") \
+                        {%>input<%}else{%>select<%\
+                        }%> class="form-control input-sm <%if (col.filterProperty) {%><%=col.filterProperty%><%}else{%><%=col.property %><%}%>" \
+                        name="filter" type="text" value="<%=filterOptions[col.property]%>">\
+                <% if (col.filterType !== "input") {%>\
+                <option value=""><%=dict.all%></option>\
+                    <% _.each(options[col.property], function (option) {%>\
+                        <option value="<%=option%>"<% if (filterOptions[col.property] == option) print(\' selected\'); %>><%=option%></option>\
+                    <%})%>\
+                </select><%}%>\
+                <%}%>\
+            </td>\
+        <%})%>', 
+    foundationTemplate: '<% if (isMultiselect) {%>\
+            <td></td>\
+        <%} if (isContainSubgrid) {%>\
+            <td></td>\
+        <% } %>\
+        <% console.log("***"); console.info(filterOptions); _.each(cols, function (col) {%>\
+            <td>\
+                <%if (col.filter) {%>\
+                    <<% if (col.filterType === "input") \
+                        {%>input<%}else{%>select<%\
+                        }%> class="<%if (col.filterProperty) {%><%=col.filterProperty%><%}else{%><%=col.property %><%}%>" \
+                        name="filter" type="text" value="<%=filterOptions[col.property]%>">\
+                <% if (col.filterType !== "input") {%>\
+                <option value=""><%=dict.all%></option>\
+                    <% _.each(options[col.property], function (option) {%>\
+                        <option value="<%=option%>"<% if (filterOptions[col.property] == option) print(\' selected\'); %>><%=option%></option>\
+                    <%})%>\
+                </select><%}%>\
+                <%}%>\
+            </td>\
+        <%})%>', 
+    
     onFilter: function (e) {
         var $f = $(e.currentTarget);
         var key = $f.attr('class');
+        if (this.view.css == 'bootstrap') key = key.replace("form-control input-sm","").trim();
         var text = $.trim($f.val());
         this.view.collection.filter(key,text);
         /*
@@ -89,14 +147,14 @@ bbGrid.FilterView = Backbone.View.extend({
                 }
             }
         });
-        filterBarHtml = this.template({
+        filterBarHtml = _.template(this.templateBody,{
             dict: this.view.dict,
             isMultiselect: this.view.multiselect,
             isContainSubgrid: this.view.subgrid,
             filterOptions: this.view.filterOptions,
             cols: _.filter(this.view.colModel, function (col) {return !col.hidden; }),
             options: options
-        });
+        }, bbGrid.templateSettings);
         this.$el.html(filterBarHtml);
         this.rendered = true;
         return this.$el;

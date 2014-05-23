@@ -12,7 +12,6 @@ bbGrid.View = Backbone.View.extend({
         // this results in infinte loop Backbone.View.apply(this, [options]);
         options.events = _.pick(options, _.union(this.viewOptions, _.values(options.events)));
         _.extend(this, options);
-        console.log(this);
         this.setDict(bbGrid.lang);
         this.on('all', this.EventHandler, this);
 
@@ -48,6 +47,11 @@ bbGrid.View = Backbone.View.extend({
         var initSortCol = _.find(this.colModel, function(col) { return col.defaultSort; } );
         if (initSortCol) {
             this.rsortBy(initSortCol);
+        }
+
+        this.cssInjected = false;
+        if (!this.css) {
+            this.css = 'default';
         }
 
         // go ahead and render the table here and then figure out adding the collection
@@ -167,8 +171,29 @@ bbGrid.View = Backbone.View.extend({
         if (this.width) {
             this.$el.css('width', this.width);
         }
+        if (this.css && !this.cssInjected) {
+            console.log('Let us set the styles to '+this.css);
+            // inject the styles
+            switch (this.css) { 
+                case 'bootstrap': 
+                case 'foundation':
+                    /*var $cssLink = $("<link>").attr({rel:'stylesheet',href:'//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css'});
+                    $("head").append($cssLink);*/
+                    this.addHeaderStyles();
+                    break;
+                case 'default':
+                    this.addDefaultStyles();
+                    break;
+            }
+            this.cssInjected = true;
+        }
         if (!this.$grid) {
             this.$grid = $('<table>');
+            if (this.css == 'bootstrap') {
+                this.$grid.attr({
+                    class:'table table-condensed table-striped table-bordered'
+                });
+            }
             if (this.caption) {
                 this.$grid.append('<caption>' + this.caption + '</caption>');
             }
@@ -510,38 +535,34 @@ bbGrid.View = Backbone.View.extend({
         var $el = $(event.currentTarget),
             className = $el.attr('class'),
             page;
-        switch (className) {
-        case 'bbGrid-page-input':
+        
+        if (className.indexOf('page') >= 0) {
             page = parseInt($el.val(), 10);
-            break;
-        case 'left':
+        } else if (className.indexOf('prev') >= 0) {
             page = this.currPage - 1;
-            break;
-        case 'right':
+        } else if (className.indexOf('next') >= 0) {
             page = this.currPage + 1;
-            break;
-        case 'first':
+        } else if (className.indexOf('first') >= 0) {
             page = 1;
-            break;
-        case 'last':
+        } else if (className.indexOf('last') >= 0) {
             page = this.cntPages;
-            break;
-        default:
+        } else {
             page = this.currPage;
         }
         if (page > this.cntPages || page <= 0) {
             return false;
         }
+        var $pagerCell = $("div.bbGrid table tfoot td.pager",this.$el);
         if (this.currPage !== page) {
             this.currPage = page;
-            $('div.bbGrid-pager li', this.$el).removeClass('active');
-            $('.bbGrid-page-input', this.$pager).val(this.currPage);
+            $pagerCell.find('a').removeClass('active');
+            $pagerCell.find('input').val(this.currPage);
 
-            if (this.currPage === 1) {
-                $('div.bbGrid-pager a.left,.first', this.$el).parent().addClass('active');
+            if (this.currPage > 1) {
+                $pagerCell.find('a.prev,.first').removeClass('active');
             }
-            if (this.currPage >= this.cntPages) {
-                $('div.bbGrid-pager a.right,.last', this.$el).parent().addClass('active');
+            if (this.currPage < this.cntPages) {
+                $pagerCell.find('a.next,.last').addClass('active');
             }
             this.renderPage({silent: !this.loadDynamic});
         }
@@ -554,6 +575,57 @@ bbGrid.View = Backbone.View.extend({
     getSelectedModels: function () {
         var self = this;
         return _.map(this.selectedRows, function (id) { return self.collection.get(id); });
-    }
+    },
+    addHeaderStyles: function() {
+        var $style = $("<style>").attr({type:"text/css"}).html(this.defaultHeadStyles);
+        if (this.css == 'foundation') $style.append(this.foundationStyles);
+        else if (this.css == 'bootstrap') $style.append(this.bootstrapStyles);
+        $("head").append($style);
+    },
+    addDefaultStyles: function() {
+        var $style = $("<style>").attr({type:"text/css"}).html(this.defaultTableStyles).append(this.defaultHeadStyles);
+        $("head").append($style);
+    },
+    foundationStyles: '.bbGrid table thead tr { border-bottom: thin solid #ccc; }\
+        .bbGrid table tr th, .bbGrid table tr td { padding-left: 1.5rem; padding-right: 1.5rem }\
+        .bbGrid table thead label, .bbGrid table thead select, .bbGrid table thead input { margin-bottom: 1px; }\
+        .bbGrid table tfoot { border-top: thin solid #ccc; }\
+        .bbGrid table tfoot tr td.pager input.page { display: inline; width: 4rem; text-align: right; margin-bottom:1px; }\
+        .bbGrid table tfoot tr td.pager a.button { margin-bottom:1px; }\
+        .bbGrid table tfoot tr td.pager a.button:hover { text-decoration:none; }',
+    bootstrapStyles: '',
+    defaultTableStyles: '.bbGrid table { border: thin solid #ccc; border-collapse: collapse; font-family: sans-serif; }\
+        .bbGrid table tbody tr:nth-child(odd) {\
+            background-color: #efefef;\
+        }\
+        .bbGrid table thead tr th, .bbGrid table tbody tr td {\
+            padding: .35rem;\
+        }\
+        .bbGrid table thead { border-bottom: thin solid #ccc;}',
+    defaultHeadStyles: '.bbGrid table thead tr th.sortable { cursor: pointer; }\
+        .bbGrid table thead tr th.sortable span.arrows { float: left; margin-right: 0.25em; }\
+        .bbGrid table thead tr th.sortable span.arrows i { width: 0; height: 0; display: block; }\
+        .bbGrid table thead tr th.sortable span.arrows i.up { \
+            border-left: .25em solid transparent;\
+            border-right: .25em solid transparent;\
+            border-bottom: .35em solid;\
+            margin-bottom: 1px;\
+        } \
+        .bbGrid table thead tr th.sortable.sorted.asc span.arrows i.down { \
+            border-top-color: transparent;\
+        }\
+        .bbGrid table thead tr th.sortable span.arrows i.down { \
+            border-left: .25em solid transparent;\
+            border-right: .25em solid transparent;\
+            border-top: .35em solid;\
+        } \
+        .bbGrid table thead tr th.sortable.sorted.desc span.arrows i.up { \
+            border-bottom-color: transparent;\
+        }\
+        .bbGrid table tfoot tr td.pager a:not(.active) { \
+            text-decoration: none; \
+            color: #777;\
+            cursor: default;\
+        }'
 });
 

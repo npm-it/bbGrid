@@ -6,26 +6,41 @@ bbGrid.SearchView = Backbone.View.extend({
         this.events = {
             'keyup input[name=search]': 'onSearch',
         };
-        this.grid = options.view;
-        this.colspan = options.colspan;
+        this.view = options.view;
+        if (this.view.css) {
+            switch(this.view.css) {
+                case 'bootstrap': 
+                    this.templateBody  = this.bootstrapTemplate;
+                    break;
+                case 'foundation': 
+                    this.templateBody  = this.foundationTemplate;
+                    break;
+                default:
+                    this.templateBody  = this.defaultTemplate;
+            }
+        } else {
+            this.templateBody  = this.defaultTemplate;
+        }
+
+
     },
-    tagName: 'td',
-    template: _.template(
-        '<input name="search" type="text" placeholder="<%=dict.search%>">', null, bbGrid.templateSettings
-    ),
+    //tagName: 'tr',
+    defaultTemplate: '<input name="search" type="text" placeholder="<%=dict.search%>">',
+    bootstrapTemplate: '<input name="search" type="text" placeholder="<%=dict.search%>" class="form-control input-med">',
+    foundationTemplate: '<input name="search" type="text" placeholder="<%=dict.search%>">',
     onSearch: function (event) {
         var self = this,
             $el = $(event.target),
             text = $el.val();
         console.log('search on "'+text+'"');
-        this.grid.collection.search(text);
+        this.view.collection.search(text);
         //this.view.collection.trigger('reset');
     },
     render: function () {
-        var searchBarHtml = this.template({
-            dict: this.grid.dict,
-        });
-        this.$el.html(searchBarHtml).attr({colspan:this.colspan});
+        var searchBarHtml = _.template(this.templateBody,{
+            dict: this.view.dict,
+        }, bbGrid.templateSettings);
+        this.$el.html(searchBarHtml);//.attr({colspan:this.colspan});
         return this.$el;
     }
 });
