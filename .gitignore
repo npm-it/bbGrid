@@ -162,8 +162,4 @@ pip-log.txt
 # Mac crap
 .DS_Store
 
-<<<<<<< HEAD
 /node_modules/
-=======
-node_modules
->>>>>>> refs/heads/reorg-it-all
