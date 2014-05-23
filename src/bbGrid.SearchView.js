@@ -32,7 +32,6 @@ bbGrid.SearchView = Backbone.View.extend({
         var self = this,
             $el = $(event.target),
             text = $el.val();
-        console.log('search on "'+text+'"');
         this.view.collection.search(text);
         //this.view.collection.trigger('reset');
     },

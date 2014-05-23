@@ -29,7 +29,7 @@ bbGrid.FilterView = Backbone.View.extend({
         <%} if (isContainSubgrid) {%>\
             <td></td>\
         <% } %>\
-        <% console.log("***"); console.info(filterOptions); _.each(cols, function (col) {%>\
+        <% _.each(cols, function (col) {%>\
             <td>\
                 <%if (col.filter) {%>\
                     <<% if (col.filterType === "input") \
@@ -50,7 +50,7 @@ bbGrid.FilterView = Backbone.View.extend({
         <%} if (isContainSubgrid) {%>\
             <td></td>\
         <% } %>\
-        <% console.log("***"); console.info(filterOptions); _.each(cols, function (col) {%>\
+        <% _.each(cols, function (col) {%>\
             <td>\
                 <%if (col.filter) {%>\
                     <<% if (col.filterType === "input") \
@@ -71,7 +71,7 @@ bbGrid.FilterView = Backbone.View.extend({
         <%} if (isContainSubgrid) {%>\
             <td></td>\
         <% } %>\
-        <% console.log("***"); console.info(filterOptions); _.each(cols, function (col) {%>\
+        <% _.each(cols, function (col) {%>\
             <td>\
                 <%if (col.filter) {%>\
                     <<% if (col.filterType === "input") \

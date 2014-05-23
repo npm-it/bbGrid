@@ -127,7 +127,6 @@ bbGrid.View = Backbone.View.extend({
     },
     CollectionEventHandler: function (eventName, model, collection, options) {
         var self = this;
-        if (eventName != 'add') console.log('CollectionEventHandler: event is '+eventName);
         switch (eventName) {
         case 'add':
             this.addModelsHandler(model, collection, options);

@@ -97,7 +97,6 @@ bbGrid.Collection = Backbone.Collection.extend({
                         }
                     }
                 },this);
-                console.log(log+' :: Did it match? '+matches);
                 return matches;
             },this);
             this.reset(this.filtered,{silent:true});
@@ -244,7 +243,6 @@ bbGrid.View = Backbone.View.extend({
     },
     CollectionEventHandler: function (eventName, model, collection, options) {
         var self = this;
-        if (eventName != 'add') console.log('CollectionEventHandler: event is '+eventName);
         switch (eventName) {
         case 'add':
             this.addModelsHandler(model, collection, options);
@@ -866,7 +864,7 @@ bbGrid.View = Backbone.View.extend({
         <%} if (isContainSubgrid) {%>\
             <td></td>\
         <% } %>\
-        <% console.log("***"); console.info(filterOptions); _.each(cols, function (col) {%>\
+        <% _.each(cols, function (col) {%>\
             <td>\
                 <%if (col.filter) {%>\
                     <<% if (col.filterType === "input") \
@@ -887,7 +885,7 @@ bbGrid.View = Backbone.View.extend({
         <%} if (isContainSubgrid) {%>\
             <td></td>\
         <% } %>\
-        <% console.log("***"); console.info(filterOptions); _.each(cols, function (col) {%>\
+        <% _.each(cols, function (col) {%>\
             <td>\
                 <%if (col.filter) {%>\
                     <<% if (col.filterType === "input") \
@@ -908,7 +906,7 @@ bbGrid.View = Backbone.View.extend({
         <%} if (isContainSubgrid) {%>\
             <td></td>\
         <% } %>\
-        <% console.log("***"); console.info(filterOptions); _.each(cols, function (col) {%>\
+        <% _.each(cols, function (col) {%>\
             <td>\
                 <%if (col.filter) {%>\
                     <<% if (col.filterType === "input") \
@@ -1032,7 +1030,6 @@ bbGrid.SearchView = Backbone.View.extend({
         var self = this,
             $el = $(event.target),
             text = $el.val();
-        console.log('search on "'+text+'"');
         this.view.collection.search(text);
         //this.view.collection.trigger('reset');
     },

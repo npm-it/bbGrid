@@ -23,15 +23,29 @@ module.exports = function(grunt) {
         dest: '<%= pkg.name %>.js'
       }
     },
+    uglify: {
+      js: {
+        options: {
+          sourceMap: true,
+          compress: {
+            drop_console: true
+          }
+        },
+        files: {
+          '<%= pkg.name %>.min.js': [ '<%= pkg.name %>.js' ]
+        }
+      }
+    },
     watch: {
       files: 'src/*.js',
-      tasks: ['concat']
+      tasks: ['concat','uglify']
     }
   });
 
   grunt.loadNpmTasks('grunt-contrib-watch');
   grunt.loadNpmTasks('grunt-contrib-concat');
+  grunt.loadNpmTasks('grunt-contrib-uglify');
 
-  grunt.registerTask('default', ['concat']);
+  grunt.registerTask('default', ['concat','uglify','watch']);
 
 };

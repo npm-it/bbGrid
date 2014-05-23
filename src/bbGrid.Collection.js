@@ -47,7 +47,6 @@ bbGrid.Collection = Backbone.Collection.extend({
                         }
                     }
                 },this);
-                console.log(log+' :: Did it match? '+matches);
                 return matches;
             },this);
             this.reset(this.filtered,{silent:true});
