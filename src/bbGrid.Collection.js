@@ -1,6 +1,11 @@
 /* main collection class - handles all filtering and searching */
 bbGrid.Collection = Backbone.Collection.extend({
     initialize: function(models, options) {
+        console.log('bbGrid.Collection.initialize()');
+/*        if (!_.isEmpty(models)) { 
+            this.parse(models);
+        } */
+        console.info(this);
     },
     filtered: [],
     fullJson: [],
@@ -43,7 +48,7 @@ bbGrid.Collection = Backbone.Collection.extend({
                             matches = criteria.search(model,this.searchText);
                         } else { // default search
                             var val = model.get(criteria.property).toLowerCase().trim();
-                            matches = val && ( val.lastIndexOf(this.searchText.toLowerCase().trim(), 0) === 0 );
+                            matches = val && ( val.indexOf(this.searchText.toLowerCase().trim(), 0) >= 0 );
                         }
                     }
                 },this);

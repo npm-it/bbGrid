@@ -39,6 +39,14 @@ bbGrid.RowCountView = Backbone.View.extend({
         </select>\
         <%}%>',
     foundationTemplate: '<% if (rowlist) {%>\
+            <label class="rowlist-label"><%=dict.rowsOnPage%>:</label>\
+            <select class="rowlist">\
+            <% _.each(rowlist, function (val) {%>\
+                <option <% if (rows === val) {%>selected="selected"<%}%>><%=val%></option>\
+            <%})%>\
+            </select>\
+        <%}%>',
+    foundationTemplateX: '<% if (rowlist) {%>\
         <div class="row"><div class="small-3 columns">\
             <label class="rowlist-label right inline"><%=dict.rowsOnPage%>:</label>\
         </div><div class="small-9 columns">\

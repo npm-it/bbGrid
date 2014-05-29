@@ -51,6 +51,11 @@ var bbGrid = this.bbGrid = {
 ;/* main collection class - handles all filtering and searching */
 bbGrid.Collection = Backbone.Collection.extend({
     initialize: function(models, options) {
+        console.log('bbGrid.Collection.initialize()');
+/*        if (!_.isEmpty(models)) { 
+            this.parse(models);
+        } */
+        console.info(this);
     },
     filtered: [],
     fullJson: [],
@@ -93,7 +98,7 @@ bbGrid.Collection = Backbone.Collection.extend({
                             matches = criteria.search(model,this.searchText);
                         } else { // default search
                             var val = model.get(criteria.property).toLowerCase().trim();
-                            matches = val && ( val.lastIndexOf(this.searchText.toLowerCase().trim(), 0) === 0 );
+                            matches = val && ( val.indexOf(this.searchText.toLowerCase().trim(), 0) >= 0 );
                         }
                     }
                 },this);
@@ -135,6 +140,7 @@ bbGrid.View = Backbone.View.extend({
             throw new Error('A "collection" or "json" or "url" property must be specified');
         } else if (this.json) {
             this.collection = new bbGrid.Collection(this.json);
+            this.collection.refreshCollection();
         } else if (this.url) {
             this.collection = new bbGrid.Collection();
             this.collection.url = this.url;
@@ -142,7 +148,11 @@ bbGrid.View = Backbone.View.extend({
             if (this.collection instanceof Backbone.Collection) {
                 this.collection = _.extend(new bbGrid.Collection(), this.collection);
             }
+            this.collection.refreshCollection();
         }
+        this.collection.on("all", this.CollectionEventHandler, this);
+        console.log('bbGrid.View.initialize: here is the collection');
+        console.info(this.collection);
 
         // figure out which columns are searchable and sortable - both default to true
         _.each(this.colModel,function(col) {
@@ -170,21 +180,20 @@ bbGrid.View = Backbone.View.extend({
             this.css = 'default';
         }
 
-        // go ahead and render the table here and then figure out adding the collection
-        this.render();
-
         this.rowViews = {};
         this.selectedRows = [];
         this.currPage = 1;
 
-        this.collection.on("all", this.CollectionEventHandler, this);
         this.enableFilter = _.compact(_.pluck(this.colModel, 'filter')).length > 0;
+
+        // go ahead and render the table here and then figure out adding the collection
+        this.render();
+
         this.autoFetch = !this.loadDynamic && this.autoFetch;
         if (this.autoFetch) {
             this.collection.fetch();
             this.autoFetch = false;
-        }
-
+        } 
         
         // ?? todo - should this do this?
         if (this.loadDynamic) {
@@ -372,7 +381,7 @@ bbGrid.View = Backbone.View.extend({
                 }
             });
             return false;
-        }
+        } 
         this.selectedRows = [];
         if (this.onBeforeRender) {
             this.onBeforeRender();
@@ -701,7 +710,14 @@ bbGrid.View = Backbone.View.extend({
     },
     foundationStyles: '.bbGrid table thead tr { border-bottom: thin solid #ccc; }\
         .bbGrid table tr th, .bbGrid table tr td { padding-left: 1.5rem; padding-right: 1.5rem }\
-        .bbGrid table thead label, .bbGrid table thead select, .bbGrid table thead input { margin-bottom: 1px; }\
+        .bbGrid table tr th { white-space: nowrap; }\
+        .bbGrid table thead > tr > td > div > label.rowlist-label,\
+        .bbGrid table thead > tr > td > div > select.rowlist,\
+        .bbGrid table thead > tr > td > div > input,\
+        .bbGrid table thead > tr > td > input,\
+        .bbGrid table thead > tr > td > select  { margin-bottom: 1px; }\
+        .bbGrid table thead > tr > td > div > label.rowlist-label { display:inline; }\
+        .bbGrid table thead > tr > td > div > select.rowlist { width: auto; }\
         .bbGrid table tfoot { border-top: thin solid #ccc; }\
         .bbGrid table tfoot tr td.pager input.page { display: inline; width: 4rem; text-align: right; margin-bottom:1px; }\
         .bbGrid table tfoot tr td.pager a.button { margin-bottom:1px; }\
@@ -825,11 +841,20 @@ bbGrid.View = Backbone.View.extend({
         }
 
         if (!this.view.$filterBar && this.view.enableFilter) {
-            this.view.filterBar = new bbGrid.FilterView({ view: this.view });
-            this.view.$filterBar = this.view.filterBar.render();
-            this.$el.append(this.view.$filterBar);
+            if (this.view.autoFetch) { // when fetching the filter values are unknown at render
+                this.view.collection.on('reset',this.addFilter);
+            } else {
+                this.addFilter();
+            }
         }
         return this.$el;
+    },
+    addFilter: function() {
+        this.view.filterBar = new bbGrid.FilterView({ view: this.view });
+        this.view.$filterBar = this.view.filterBar.render();
+        this.$el.append(this.view.$filterBar);
+        this.view.collection.off('reset',this.addFilter);
+
     }
 });
 
@@ -928,7 +953,12 @@ bbGrid.View = Backbone.View.extend({
         var key = $f.attr('class');
         if (this.view.css == 'bootstrap') key = key.replace("form-control input-sm","").trim();
         var text = $.trim($f.val());
-        this.view.collection.filter(key,text);
+        var filterCol = _.findWhere(this.view.colModel,{filterProperty:key});
+        if (filterCol && filterCol.customFilter) 
+            this.view.collection.filter(key,text,filterCol.customFilter);
+        else 
+            this.view.collection.filter(key,text);
+
         /*
         var text, self = this,
             collection = new Backbone.Collection(this.view.collection.models);
@@ -1083,6 +1113,14 @@ bbGrid.RowCountView = Backbone.View.extend({
         </select>\
         <%}%>',
     foundationTemplate: '<% if (rowlist) {%>\
+            <label class="rowlist-label"><%=dict.rowsOnPage%>:</label>\
+            <select class="rowlist">\
+            <% _.each(rowlist, function (val) {%>\
+                <option <% if (rows === val) {%>selected="selected"<%}%>><%=val%></option>\
+            <%})%>\
+            </select>\
+        <%}%>',
+    foundationTemplateX: '<% if (rowlist) {%>\
         <div class="row"><div class="small-3 columns">\
             <label class="rowlist-label right inline"><%=dict.rowsOnPage%>:</label>\
         </div><div class="small-9 columns">\

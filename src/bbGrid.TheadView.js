@@ -81,11 +81,20 @@ bbGrid.TheadView = Backbone.View.extend({
         }
 
         if (!this.view.$filterBar && this.view.enableFilter) {
-            this.view.filterBar = new bbGrid.FilterView({ view: this.view });
-            this.view.$filterBar = this.view.filterBar.render();
-            this.$el.append(this.view.$filterBar);
+            if (this.view.autoFetch) { // when fetching the filter values are unknown at render
+                this.view.collection.on('reset',this.addFilter);
+            } else {
+                this.addFilter();
+            }
         }
         return this.$el;
+    },
+    addFilter: function() {
+        this.view.filterBar = new bbGrid.FilterView({ view: this.view });
+        this.view.$filterBar = this.view.filterBar.render();
+        this.$el.append(this.view.$filterBar);
+        this.view.collection.off('reset',this.addFilter);
+
     }
 });
 

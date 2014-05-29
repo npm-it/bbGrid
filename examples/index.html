@@ -27,6 +27,7 @@
 	<script src="../bbGrid.js" type="text/javascript"></script>
 	<style type="text/css">
 		.wrapper { width: 960px; margin: 10px auto; }
+		.bbGrid table thead tr th { white-space: nowrap; }
 	</style>
 </head>
 
@@ -107,7 +108,7 @@ $(document).ready(function(){
 							var city = model.get('City').toLowerCase();
 							var state = model.get('State').toLowerCase();
 							// this performs a starts with function
-							return (city.lastIndexOf(match.toLowerCase(), 0) === 0 || state.lastIndexOf(match.toLowerCase(), 0) === 0); 
+							return (city.indexOf(match.toLowerCase(), 0) >= 0 || state.indexOf(match.toLowerCase(), 0) >= 0); 
 						},
 						render: function(model, view) {
 							return model.get('City') + ", " + model.get('State');

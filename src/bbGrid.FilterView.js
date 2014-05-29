@@ -93,7 +93,12 @@ bbGrid.FilterView = Backbone.View.extend({
         var key = $f.attr('class');
         if (this.view.css == 'bootstrap') key = key.replace("form-control input-sm","").trim();
         var text = $.trim($f.val());
-        this.view.collection.filter(key,text);
+        var filterCol = _.findWhere(this.view.colModel,{filterProperty:key});
+        if (filterCol && filterCol.customFilter) 
+            this.view.collection.filter(key,text,filterCol.customFilter);
+        else 
+            this.view.collection.filter(key,text);
+
         /*
         var text, self = this,
             collection = new Backbone.Collection(this.view.collection.models);

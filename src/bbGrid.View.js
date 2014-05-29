@@ -19,6 +19,7 @@ bbGrid.View = Backbone.View.extend({
             throw new Error('A "collection" or "json" or "url" property must be specified');
         } else if (this.json) {
             this.collection = new bbGrid.Collection(this.json);
+            this.collection.refreshCollection();
         } else if (this.url) {
             this.collection = new bbGrid.Collection();
             this.collection.url = this.url;
@@ -26,7 +27,11 @@ bbGrid.View = Backbone.View.extend({
             if (this.collection instanceof Backbone.Collection) {
                 this.collection = _.extend(new bbGrid.Collection(), this.collection);
             }
+            this.collection.refreshCollection();
         }
+        this.collection.on("all", this.CollectionEventHandler, this);
+        console.log('bbGrid.View.initialize: here is the collection');
+        console.info(this.collection);
 
         // figure out which columns are searchable and sortable - both default to true
         _.each(this.colModel,function(col) {
@@ -54,21 +59,20 @@ bbGrid.View = Backbone.View.extend({
             this.css = 'default';
         }
 
-        // go ahead and render the table here and then figure out adding the collection
-        this.render();
-
         this.rowViews = {};
         this.selectedRows = [];
         this.currPage = 1;
 
-        this.collection.on("all", this.CollectionEventHandler, this);
         this.enableFilter = _.compact(_.pluck(this.colModel, 'filter')).length > 0;
+
+        // go ahead and render the table here and then figure out adding the collection
+        this.render();
+
         this.autoFetch = !this.loadDynamic && this.autoFetch;
         if (this.autoFetch) {
             this.collection.fetch();
             this.autoFetch = false;
-        }
-
+        } 
         
         // ?? todo - should this do this?
         if (this.loadDynamic) {
@@ -256,7 +260,7 @@ bbGrid.View = Backbone.View.extend({
                 }
             });
             return false;
-        }
+        } 
         this.selectedRows = [];
         if (this.onBeforeRender) {
             this.onBeforeRender();
@@ -585,7 +589,14 @@ bbGrid.View = Backbone.View.extend({
     },
     foundationStyles: '.bbGrid table thead tr { border-bottom: thin solid #ccc; }\
         .bbGrid table tr th, .bbGrid table tr td { padding-left: 1.5rem; padding-right: 1.5rem }\
-        .bbGrid table thead label, .bbGrid table thead select, .bbGrid table thead input { margin-bottom: 1px; }\
+        .bbGrid table tr th { white-space: nowrap; }\
+        .bbGrid table thead > tr > td > div > label.rowlist-label,\
+        .bbGrid table thead > tr > td > div > select.rowlist,\
+        .bbGrid table thead > tr > td > div > input,\
+        .bbGrid table thead > tr > td > input,\
+        .bbGrid table thead > tr > td > select  { margin-bottom: 1px; }\
+        .bbGrid table thead > tr > td > div > label.rowlist-label { display:inline; }\
+        .bbGrid table thead > tr > td > div > select.rowlist { width: auto; }\
         .bbGrid table tfoot { border-top: thin solid #ccc; }\
         .bbGrid table tfoot tr td.pager input.page { display: inline; width: 4rem; text-align: right; margin-bottom:1px; }\
         .bbGrid table tfoot tr td.pager a.button { margin-bottom:1px; }\
