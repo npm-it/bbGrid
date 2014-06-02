@@ -15,7 +15,7 @@ bbGrid.Collection = Backbone.Collection.extend({
     },
     filters: {},
     // should not be aware of columns and stuff
-    filter: function (key, text, customFilter) {
+    applyFilter: function (key, text, customFilter) {
         if (text == '') delete this.filters[key];
         else this.filters[key] = text;
 
@@ -65,7 +65,7 @@ bbGrid.Collection = Backbone.Collection.extend({
         // apply filters to the full list first, then search within
         if (this.searchText != text) {
             this.searchText = text;
-            this.filter('bogus','');
+            this.applyFilter('bogus','');
         }
     }
 });

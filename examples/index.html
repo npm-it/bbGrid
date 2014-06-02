@@ -84,11 +84,15 @@
 // })(); 
 
 var bb = bb || {};
+bb.PersonCollection = Backbone.Collection.extend({
+	url: 'includes/data/sample.json'
+});
 
 $(document).ready(function(){
 			bb.personGrid = new bbGrid.View({
 				container: $('#example-1'),
-				url: 'includes/data/sample.json',
+				//url: 'includes/data/sample.json',
+				collection: new bb.PersonCollection(),
 				autoFetch: true,
 				rows: 25,
 				rowList: [10,25,50,100],

@@ -95,9 +95,9 @@ bbGrid.FilterView = Backbone.View.extend({
         var text = $.trim($f.val());
         var filterCol = _.findWhere(this.view.colModel,{filterProperty:key});
         if (filterCol && filterCol.customFilter) 
-            this.view.collection.filter(key,text,filterCol.customFilter);
+            this.view.collection.applyFilter(key,text,filterCol.customFilter);
         else 
-            this.view.collection.filter(key,text);
+            this.view.collection.applyFilter(key,text);
 
         /*
         var text, self = this,
