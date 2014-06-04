@@ -47,8 +47,16 @@ bbGrid.Collection = Backbone.Collection.extend({
                         if (criteria.search !== false) {
                             matches = criteria.search(model,this.searchText);
                         } else { // default search
-                            var val = model.get(criteria.property).toLowerCase().trim();
-                            matches = val && ( val.indexOf(this.searchText.toLowerCase().trim(), 0) >= 0 );
+                            origVal = model.get(criteria.property);
+                            if( _.isUndefined(origVal) ) {
+                                matches = false;
+                            } else {
+                                if( !_.isString(origVal) ) {
+                                    origVal = '' + origVal; // convert to string
+                                }
+                                var val = origVal.toLowerCase().trim();
+                                matches = val && ( val.indexOf(this.searchText.toLowerCase().trim(), 0) >= 0 );
+                            }
                         }
                     }
                 },this);
