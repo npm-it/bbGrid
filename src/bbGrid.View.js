@@ -142,9 +142,10 @@ bbGrid.View = Backbone.View.extend({
             break;
         case 'request':
             this.filterOptions = {};
-            _.each(this.colModel, function (col, index) {
-                self.colModel[index] = _.omit(col, 'defaultSort');
-            });
+            // this property is needed to do the defaultSort after loading the collection
+            // _.each(this.colModel, function (col, index) {
+            //     self.colModel[index] = _.omit(col, 'defaultSort');
+            // });
             if (this.onBeforeCollectionRequest) {
                 this.onBeforeCollectionRequest();
             }
@@ -156,6 +157,12 @@ bbGrid.View = Backbone.View.extend({
         case 'sync':
             this.toggleLoading(false);
             this.collection.refreshCollection();
+            // added jcj 2014-07-11 to allow default desc sort
+            var initSortCol = _.find(this.colModel, function(col) { return col.defaultSort; } );
+            if( initSortCol.defaultSort == 'desc' ) {
+                this.collection.models.reverse();
+            }
+            // end addition
             this.renderPage();
             break;
         case 'reset':
