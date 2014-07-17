@@ -288,7 +288,7 @@ bbGrid.View = Backbone.View.extend({
             this.collection.refreshCollection();
             // added jcj 2014-07-11 to allow default desc sort
             var initSortCol = _.find(this.colModel, function(col) { return col.defaultSort; } );
-            if( initSortCol.defaultSort == 'desc' ) {
+            if( initSortCol && initSortCol.defaultSort == 'desc' ) {
                 this.collection.models.reverse();
             }
             // end addition
