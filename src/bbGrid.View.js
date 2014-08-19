@@ -1,4 +1,4 @@
-/* 
+/*
  * this is the main view, containing all of the elements (sub-views) that make up the grid
  */
 bbGrid.View = Backbone.View.extend({
@@ -9,6 +9,10 @@ bbGrid.View = Backbone.View.extend({
     initialize: function(options) {
         console.log('** initializing the bbGrid **');
         options || (options = {});
+
+        // TODO: does there need to be a defaults attribute on this object
+        this.minimalHeader = false;
+
         // this results in infinte loop Backbone.View.apply(this, [options]);
         options.events = _.pick(options, _.union(this.viewOptions, _.values(options.events)));
         _.extend(this, options);
@@ -72,8 +76,8 @@ bbGrid.View = Backbone.View.extend({
         if (this.autoFetch) {
             this.collection.fetch();
             this.autoFetch = false;
-        } 
-        
+        }
+
         // ?? todo - should this do this?
         if (this.loadDynamic) {
             _.extend(this.collection.prototype, {
@@ -187,8 +191,8 @@ bbGrid.View = Backbone.View.extend({
         }
         if (this.css && !this.cssInjected) {
             // inject the styles
-            switch (this.css) { 
-                case 'bootstrap': 
+            switch (this.css) {
+                case 'bootstrap':
                 case 'foundation':
                     /*var $cssLink = $("<link>").attr({rel:'stylesheet',href:'//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css'});
                     $("head").append($cssLink);*/
@@ -217,7 +221,7 @@ bbGrid.View = Backbone.View.extend({
             this.$thead = this.thead.render();
             this.$grid.append(this.$thead);
         }
-            
+
         if (!this.$tbody) {
             this.$tbody = $("<tbody>");
             this.$grid.append(this.$tbody);
@@ -272,7 +276,7 @@ bbGrid.View = Backbone.View.extend({
                 }
             });
             return false;
-        } 
+        }
         this.selectedRows = [];
         if (this.onBeforeRender) {
             this.onBeforeRender();
@@ -342,7 +346,7 @@ bbGrid.View = Backbone.View.extend({
         this.sortName = col.property;
         this.collection.sortName = this.sortName;
 
-        if (_.has(col,'customSort')) { 
+        if (_.has(col,'customSort')) {
             this.collection.comparator = col.customSort;
         } else {
             sortType = col.sortType || col.type || 'string';
@@ -371,7 +375,7 @@ bbGrid.View = Backbone.View.extend({
                         var d = model.get(this.sortName);
                         if (d === null) return 0;
                         var asDate = new Date(d);
-                        return asDate.getTime();                        
+                        return asDate.getTime();
                     };
                     break;
                 case 'string':
@@ -548,7 +552,7 @@ bbGrid.View = Backbone.View.extend({
         var $el = $(event.currentTarget),
             className = $el.attr('class'),
             page;
-        
+
         if (className.indexOf('page') >= 0) {
             page = parseInt($el.val(), 10);
         } else if (className.indexOf('prev') >= 0) {
