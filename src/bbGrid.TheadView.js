@@ -43,41 +43,45 @@ bbGrid.TheadView = Backbone.View.extend({
         });
         this.$columnHeaders.html(theadHtml);
 
-        if (!this.$searchRow) { 
-            this.$searchRow = $('<td/>',{colspan:this.view.colLength}); // bootstrap or foundation styling
-            this.$el.prepend($('<tr/>').html(this.$searchRow));
-        }
+        if (!this.view.minimalHeader) {
 
-        if (!this.view.$rowCountSelector) {
-            this.rowCountSelector = new bbGrid.RowCountView({view:this.view});
-            this.view.$rowCountSelector = this.rowCountSelector.render();
-            switch (this.view.css) {
-                case 'bootstrap':
-                    this.view.$rowCountSelector.addClass('pull-left');
-                    break;
-                case 'foundation':
-                    this.view.$rowCountSelector.addClass('left small-4');
-                    break;
-                default:
-                    this.view.$rowCountSelector.css({float:'left'});
-            } 
-            this.$searchRow.append(this.view.$rowCountSelector);
-        }
+          if (!this.$searchRow) {
+              this.$searchRow = $('<td/>',{colspan:this.view.colLength}); // bootstrap or foundation styling
+              this.$el.prepend($('<tr/>').html(this.$searchRow));
+          }
 
-        if (!this.view.$searchBar && this.view.enableSearch) {
-            this.searchBar = new bbGrid.SearchView({view: this.view});
-            this.view.$searchBar = this.searchBar.render();
-            switch (this.view.css) {
-                case 'bootstrap':
-                    this.view.$searchBar.addClass('pull-right');
-                    break;
-                case 'foundation':
-                    this.view.$searchBar.addClass('right');
-                    break;
-                default:
-                    this.view.$searchBar.css({float:'right'});
-            } 
-            this.$searchRow.append(this.view.$searchBar);
+          if (!this.view.$rowCountSelector) {
+              this.rowCountSelector = new bbGrid.RowCountView({view:this.view});
+              this.view.$rowCountSelector = this.rowCountSelector.render();
+              switch (this.view.css) {
+                  case 'bootstrap':
+                      this.view.$rowCountSelector.addClass('pull-left');
+                      break;
+                  case 'foundation':
+                      this.view.$rowCountSelector.addClass('left small-4');
+                      break;
+                  default:
+                      this.view.$rowCountSelector.css({float:'left'});
+              }
+              this.$searchRow.append(this.view.$rowCountSelector);
+          }
+
+          if (!this.view.$searchBar && this.view.enableSearch) {
+              this.searchBar = new bbGrid.SearchView({view: this.view});
+              this.view.$searchBar = this.searchBar.render();
+              switch (this.view.css) {
+                  case 'bootstrap':
+                      this.view.$searchBar.addClass('pull-right');
+                      break;
+                  case 'foundation':
+                      this.view.$searchBar.addClass('right');
+                      break;
+                  default:
+                      this.view.$searchBar.css({float:'right'});
+              }
+              this.$searchRow.append(this.view.$searchBar);
+          }
+
         }
 
         if (!this.view.$filterBar && this.view.enableFilter) {
