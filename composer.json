@@ -3,6 +3,7 @@
     "type": "component",
     "require": {
         "robloach/component-installer": "*",
+        "components/underscore": "1.5.*",
         "components/backbone": "1.1.*"
     },
     "extra": {
