@@ -1,0 +1,20 @@
+{
+  "name": "bbGrid",
+  "main": "bbGrid.js",
+  "version": "1.0.0",
+  "homepage": "https://github.com/npmweb/bbGrid",
+  "authors": [
+    "Russell Todd <russell.todd@northpoint.org>"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "backbone": ">= 1.1.0"
+  },
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
