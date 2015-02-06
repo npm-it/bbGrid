@@ -335,11 +335,16 @@ bbGrid.View = Backbone.View.extend({
         }
         if (!this.$grid) {
             this.$grid = $('<table>');
+            var tableClass = '';
             if (this.css == 'bootstrap') {
-                this.$grid.attr({
-                    class:'table table-condensed table-striped table-bordered'
-                });
+                tableClass += ' table table-condensed table-striped table-bordered'
             }
+            if (this.tableClass) {
+              tableClass += ' '+this.tableClass;
+            }
+            this.$grid.attr({
+                class:tableClass
+            });
             if (this.caption) {
                 this.$grid.append('<caption>' + this.caption + '</caption>');
             }
@@ -1529,16 +1534,21 @@ bbGrid.RowCountView = Backbone.View.extend({
 
 (function (global, factory) {
     var IntlPolyfill = factory();
+
     // register in -all- the module systems (at once)
-    if (typeof define === 'function' && define.amd) {
+    if (typeof define === 'function' && define.amd)
         define(IntlPolyfill);
-    }
-    if (typeof exports === 'object') {
+
+    if (typeof exports === 'object')
         module.exports = IntlPolyfill;
+
+    if (!global.Intl) {
+        global.Intl = IntlPolyfill;
+        IntlPolyfill.__applyLocaleSensitivePrototypes();
     }
-    if (global) {
-        global.IntlPolyfill = IntlPolyfill;
-    }
+
+    global.IntlPolyfill = IntlPolyfill;
+
 })(typeof global !== 'undefined' ? global : this, function() {
 "use strict";
 var
@@ -3178,7 +3188,7 @@ function ToRawPrecision (x, minPrecision, maxPrecision) {
         //    possible. If there are two such sets of e and n, pick the e and n for
         //    which n × 10ᵉ⁻ᵖ⁺¹ is larger.
         var
-            e = Math.floor(Math.log(Math.abs(x)) / Math.LN10),
+            e = log10Floor(Math.abs(x)),
 
             // Easier to get to m from here
             f = Math.round(Math.exp((Math.abs(e - p + 1)) * Math.LN10)),
@@ -3715,7 +3725,18 @@ function ToDateTimeOptions (options, required, defaults) {
  * formats, the following steps are taken:
  */
 function BasicFormatMatcher (options, formats) {
+    return calculateScore(options, formats);
+}
+
+/**
+ * Calculates score for BestFitFormatMatcher and BasicFormatMatcher.
+ * Abstracted from BasicFormatMatcher section.
+ */
+function calculateScore (options, formats, bestFit) {
     var
+    // Additional penalty type when bestFit === true
+       diffDataTypePenalty = 8,
+
     // 1. Let removalPenalty be 120.
         removalPenalty = 120,
 
@@ -3767,7 +3788,7 @@ function BasicFormatMatcher (options, formats) {
             // ii. Let formatPropDesc be the result of calling the [[GetOwnProperty]] internal method of format
             //     with argument property.
             // iii. If formatPropDesc is not undefined, then
-                // 1. Let formatProp be the result of calling the [[Get]] internal method of format with argument property.
+            //     1. Let formatProp be the result of calling the [[Get]] internal method of format with argument property.
                 formatProp = hop.call(format, property) ? format[property] : undefined;
 
             // iv. If optionsProp is undefined and formatProp is not undefined, then decrease score by
@@ -3795,6 +3816,13 @@ function BasicFormatMatcher (options, formats) {
 
                 // 4. Let delta be max(min(formatPropIndex - optionsPropIndex, 2), -2).
                     delta = Math.max(Math.min(formatPropIndex - optionsPropIndex, 2), -2);
+
+                // When the bestFit argument is true, subtract additional penalty where data types are not the same
+                if (bestFit && (
+                    ((optionsProp === 'numeric' || optionsProp === '2-digit') && (formatProp !== 'numeric' && formatProp !== '2-digit'))
+                 || ((optionsProp !== 'numeric' && optionsProp !== '2-digit') && (formatProp === '2-digit' || formatProp === 'numeric'))
+                ))
+                    score -= diffDataTypePenalty;
 
                 // 5. If delta = 2, decrease score by longMorePenalty.
                 if (delta === 2)
@@ -3836,10 +3864,28 @@ function BasicFormatMatcher (options, formats) {
  * and formats, it performs implementation dependent steps, which should return a set of
  * component representations that a typical user of the selected locale would perceive as
  * at least as good as the one returned by BasicFormatMatcher.
+ *
+ * This polyfill defines the algorithm to be the same as BasicFormatMatcher,
+ * with the addition of bonus points awarded where the requested format is of
+ * the same data type as the potentially matching format.
+ *
+ * For example,
+ *
+ *     { month: 'numeric', day: 'numeric' }
+ *
+ * should match
+ *
+ *     { month: '2-digit', day: '2-digit' }
+ *
+ * rather than
+ *
+ *     { month: 'short', day: 'numeric' }
+ *
+ * This makes sense because a user requesting a formatted date with numeric parts would
+ * not expect to see the returned format containing narrow, short or long part names
  */
 function BestFitFormatMatcher (options, formats) {
-    // This is good enough for now
-    return BasicFormatMatcher(options, formats);
+    return calculateScore(options, formats, true);
 }
 
 /* 12.2.3 */internals.DateTimeFormat = {
@@ -4140,153 +4186,155 @@ function ToLocalTime(date, calendar, timeZone) {
 // Sect 13 Locale Sensitive Functions of the ECMAScript Language Specification
 // ===========================================================================
 
-/**
- * When the toLocaleString method is called with optional arguments locales and options,
- * the following steps are taken:
- */
-/* 13.2.1 */defineProperty(Number.prototype, 'toLocaleString', {
-    writable: true,
-    configurable: true,
-    value: function () {
-        // Satisfy test 13.2.1_1
-        if (Object.prototype.toString.call(this) !== '[object Number]')
-            throw new TypeError('`this` value must be a number for Number.prototype.toLocaleString()');
-
-        // 1. Let x be this Number value (as defined in ES5, 15.7.4).
-        // 2. If locales is not provided, then let locales be undefined.
-        // 3. If options is not provided, then let options be undefined.
-        // 4. Let numberFormat be the result of creating a new object as if by the
-        //    expression new Intl.NumberFormat(locales, options) where
-        //    Intl.NumberFormat is the standard built-in constructor defined in 11.1.3.
-        // 5. Return the result of calling the FormatNumber abstract operation
-        //    (defined in 11.3.2) with arguments numberFormat and x.
-        return FormatNumber(new NumberFormatConstructor(arguments[0], arguments[1]), this);
-    }
-});
+var ls = Intl.__localeSensitiveProtos = {
+    Number: {},
+    Date:   {}
+};
 
 /**
  * When the toLocaleString method is called with optional arguments locales and options,
  * the following steps are taken:
  */
-/* 13.3.1 */defineProperty(Date.prototype, 'toLocaleString', {
-    writable: true,
-    configurable: true,
-    value: function () {
-        // Satisfy test 13.3.0_1
-        if (Object.prototype.toString.call(this) !== '[object Date]')
-            throw new TypeError('`this` value must be a Date instance for Date.prototype.toLocaleString()');
+/* 13.2.1 */ls.Number.toLocaleString = function () {
+    // Satisfy test 13.2.1_1
+    if (Object.prototype.toString.call(this) !== '[object Number]')
+        throw new TypeError('`this` value must be a number for Number.prototype.toLocaleString()');
 
-        var
-        // 1. Let x be this time value (as defined in ES5, 15.9.5).
-            x = +this;
+    // 1. Let x be this Number value (as defined in ES5, 15.7.4).
+    // 2. If locales is not provided, then let locales be undefined.
+    // 3. If options is not provided, then let options be undefined.
+    // 4. Let numberFormat be the result of creating a new object as if by the
+    //    expression new Intl.NumberFormat(locales, options) where
+    //    Intl.NumberFormat is the standard built-in constructor defined in 11.1.3.
+    // 5. Return the result of calling the FormatNumber abstract operation
+    //    (defined in 11.3.2) with arguments numberFormat and x.
+    return FormatNumber(new NumberFormatConstructor(arguments[0], arguments[1]), this);
+};
 
-        // 2. If x is NaN, then return "Invalid Date".
-        if (isNaN(x))
-            return 'Invalid Date';
+/**
+ * When the toLocaleString method is called with optional arguments locales and options,
+ * the following steps are taken:
+ */
+/* 13.3.1 */ls.Date.toLocaleString = function () {
+    // Satisfy test 13.3.0_1
+    if (Object.prototype.toString.call(this) !== '[object Date]')
+        throw new TypeError('`this` value must be a Date instance for Date.prototype.toLocaleString()');
 
-        var
-        // 3. If locales is not provided, then let locales be undefined.
-            locales = arguments[0],
+    var
+    // 1. Let x be this time value (as defined in ES5, 15.9.5).
+        x = +this;
 
-        // 4. If options is not provided, then let options be undefined.
-            options = arguments[1],
+    // 2. If x is NaN, then return "Invalid Date".
+    if (isNaN(x))
+        return 'Invalid Date';
 
-        // 5. Let options be the result of calling the ToDateTimeOptions abstract
-        //    operation (defined in 12.1.1) with arguments options, "any", and "all".
-            options = ToDateTimeOptions(options, 'any', 'all'),
+    var
+    // 3. If locales is not provided, then let locales be undefined.
+        locales = arguments[0],
 
-        // 6. Let dateTimeFormat be the result of creating a new object as if by the
-        //    expression new Intl.DateTimeFormat(locales, options) where
-        //    Intl.DateTimeFormat is the standard built-in constructor defined in 12.1.3.
-            dateTimeFormat = new DateTimeFormatConstructor(locales, options);
+    // 4. If options is not provided, then let options be undefined.
+        options = arguments[1],
 
-        // 7. Return the result of calling the FormatDateTime abstract operation (defined
-        //    in 12.3.2) with arguments dateTimeFormat and x.
-        return FormatDateTime(dateTimeFormat, x);
-    }
-});
+    // 5. Let options be the result of calling the ToDateTimeOptions abstract
+    //    operation (defined in 12.1.1) with arguments options, "any", and "all".
+        options = ToDateTimeOptions(options, 'any', 'all'),
+
+    // 6. Let dateTimeFormat be the result of creating a new object as if by the
+    //    expression new Intl.DateTimeFormat(locales, options) where
+    //    Intl.DateTimeFormat is the standard built-in constructor defined in 12.1.3.
+        dateTimeFormat = new DateTimeFormatConstructor(locales, options);
+
+    // 7. Return the result of calling the FormatDateTime abstract operation (defined
+    //    in 12.3.2) with arguments dateTimeFormat and x.
+    return FormatDateTime(dateTimeFormat, x);
+};
 
 /**
  * When the toLocaleDateString method is called with optional arguments locales and
  * options, the following steps are taken:
  */
-/* 13.3.2 */defineProperty(Date.prototype, 'toLocaleDateString', {
-    writable: true,
-    configurable: true,
-    value: function () {
-        // Satisfy test 13.3.0_1
-        if (Object.prototype.toString.call(this) !== '[object Date]')
-            throw new TypeError('`this` value must be a Date instance for Date.prototype.toLocaleDateString()');
+/* 13.3.2 */ls.Date.toLocaleDateString = function () {
+    // Satisfy test 13.3.0_1
+    if (Object.prototype.toString.call(this) !== '[object Date]')
+        throw new TypeError('`this` value must be a Date instance for Date.prototype.toLocaleDateString()');
 
-        var
-        // 1. Let x be this time value (as defined in ES5, 15.9.5).
-            x = +this;
+    var
+    // 1. Let x be this time value (as defined in ES5, 15.9.5).
+        x = +this;
 
-        // 2. If x is NaN, then return "Invalid Date".
-        if (isNaN(x))
-            return 'Invalid Date';
+    // 2. If x is NaN, then return "Invalid Date".
+    if (isNaN(x))
+        return 'Invalid Date';
 
-        var
-        // 3. If locales is not provided, then let locales be undefined.
-            locales = arguments[0],
+    var
+    // 3. If locales is not provided, then let locales be undefined.
+        locales = arguments[0],
 
-        // 4. If options is not provided, then let options be undefined.
-            options = arguments[1],
+    // 4. If options is not provided, then let options be undefined.
+        options = arguments[1],
 
-        // 5. Let options be the result of calling the ToDateTimeOptions abstract
-        //    operation (defined in 12.1.1) with arguments options, "date", and "date".
-            options = ToDateTimeOptions(options, 'date', 'date'),
+    // 5. Let options be the result of calling the ToDateTimeOptions abstract
+    //    operation (defined in 12.1.1) with arguments options, "date", and "date".
+        options = ToDateTimeOptions(options, 'date', 'date'),
 
-        // 6. Let dateTimeFormat be the result of creating a new object as if by the
-        //    expression new Intl.DateTimeFormat(locales, options) where
-        //    Intl.DateTimeFormat is the standard built-in constructor defined in 12.1.3.
-            dateTimeFormat = new DateTimeFormatConstructor(locales, options);
+    // 6. Let dateTimeFormat be the result of creating a new object as if by the
+    //    expression new Intl.DateTimeFormat(locales, options) where
+    //    Intl.DateTimeFormat is the standard built-in constructor defined in 12.1.3.
+        dateTimeFormat = new DateTimeFormatConstructor(locales, options);
 
-        // 7. Return the result of calling the FormatDateTime abstract operation (defined
-        //    in 12.3.2) with arguments dateTimeFormat and x.
-        return FormatDateTime(dateTimeFormat, x);
-    }
-});
+    // 7. Return the result of calling the FormatDateTime abstract operation (defined
+    //    in 12.3.2) with arguments dateTimeFormat and x.
+    return FormatDateTime(dateTimeFormat, x);
+};
 
 /**
  * When the toLocaleTimeString method is called with optional arguments locales and
  * options, the following steps are taken:
  */
-/* 13.3.3 */defineProperty(Date.prototype, 'toLocaleTimeString', {
+/* 13.3.3 */ls.Date.toLocaleTimeString = function () {
+    // Satisfy test 13.3.0_1
+    if (Object.prototype.toString.call(this) !== '[object Date]')
+        throw new TypeError('`this` value must be a Date instance for Date.prototype.toLocaleTimeString()');
+
+    var
+    // 1. Let x be this time value (as defined in ES5, 15.9.5).
+        x = +this;
+
+    // 2. If x is NaN, then return "Invalid Date".
+    if (isNaN(x))
+        return 'Invalid Date';
+
+    var
+    // 3. If locales is not provided, then let locales be undefined.
+        locales = arguments[0],
+
+    // 4. If options is not provided, then let options be undefined.
+        options = arguments[1],
+
+    // 5. Let options be the result of calling the ToDateTimeOptions abstract
+    //    operation (defined in 12.1.1) with arguments options, "time", and "time".
+        options = ToDateTimeOptions(options, 'time', 'time'),
+
+    // 6. Let dateTimeFormat be the result of creating a new object as if by the
+    //    expression new Intl.DateTimeFormat(locales, options) where
+    //    Intl.DateTimeFormat is the standard built-in constructor defined in 12.1.3.
+        dateTimeFormat = new DateTimeFormatConstructor(locales, options);
+
+    // 7. Return the result of calling the FormatDateTime abstract operation (defined
+    //    in 12.3.2) with arguments dateTimeFormat and x.
+    return FormatDateTime(dateTimeFormat, x);
+};
+
+defineProperty(Intl, '__applyLocaleSensitivePrototypes', {
     writable: true,
     configurable: true,
     value: function () {
-        // Satisfy test 13.3.0_1
-        if (Object.prototype.toString.call(this) !== '[object Date]')
-            throw new TypeError('`this` value must be a Date instance for Date.prototype.toLocaleTimeString()');
+        defineProperty(Number.prototype, 'toLocaleString', { writable: true, configurable: true, value: ls.Number.toLocaleString });
 
-        var
-        // 1. Let x be this time value (as defined in ES5, 15.9.5).
-            x = +this;
-
-        // 2. If x is NaN, then return "Invalid Date".
-        if (isNaN(x))
-            return 'Invalid Date';
-
-        var
-        // 3. If locales is not provided, then let locales be undefined.
-            locales = arguments[0],
-
-        // 4. If options is not provided, then let options be undefined.
-            options = arguments[1],
-
-        // 5. Let options be the result of calling the ToDateTimeOptions abstract
-        //    operation (defined in 12.1.1) with arguments options, "time", and "time".
-            options = ToDateTimeOptions(options, 'time', 'time'),
-
-        // 6. Let dateTimeFormat be the result of creating a new object as if by the
-        //    expression new Intl.DateTimeFormat(locales, options) where
-        //    Intl.DateTimeFormat is the standard built-in constructor defined in 12.1.3.
-            dateTimeFormat = new DateTimeFormatConstructor(locales, options);
-
-        // 7. Return the result of calling the FormatDateTime abstract operation (defined
-        //    in 12.3.2) with arguments dateTimeFormat and x.
-        return FormatDateTime(dateTimeFormat, x);
+        for (var k in ls.Date) {
+            if (hop.call(ls.Date, k))
+                defineProperty(Date.prototype, k, { writable: true, configurable: true, value: ls.Date[k] });
+        }
     }
 });
 
@@ -4349,6 +4397,20 @@ function addLocaleData (data, tag) {
 
 // Helper functions
 // ================
+
+/**
+ * A function to deal with the inaccuracy of calculating log10 in pre-ES6
+ * JavaScript environments. Math.log(num) / Math.LN10 was responsible for
+ * causing issue #62.
+ */
+function log10Floor (n) {
+    // ES6 provides the more accurate Math.log10
+    if (typeof Math.log10 === 'function')
+        return Math.floor(Math.log10(n));
+
+    var x = Math.round(Math.log(n) * Math.LOG10E);
+    return x - (Number('1e' + x) > n);
+}
 
 /**
  * A merge of the Intl.{Constructor}.supportedLocalesOf functions

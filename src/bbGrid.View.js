@@ -206,11 +206,16 @@ bbGrid.View = Backbone.View.extend({
         }
         if (!this.$grid) {
             this.$grid = $('<table>');
+            var tableClass = '';
             if (this.css == 'bootstrap') {
-                this.$grid.attr({
-                    class:'table table-condensed table-striped table-bordered'
-                });
+                tableClass += ' table table-condensed table-striped table-bordered'
             }
+            if (this.tableClass) {
+              tableClass += ' '+this.tableClass;
+            }
+            this.$grid.attr({
+                class:tableClass
+            });
             if (this.caption) {
                 this.$grid.append('<caption>' + this.caption + '</caption>');
             }
