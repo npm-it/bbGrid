@@ -8,7 +8,7 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "backbone": ">= 1.1.0",
+    "backbone": "~1.1.2",
     "underscore": "1.5.2"
   },
   "ignore": [
