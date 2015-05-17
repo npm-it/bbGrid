@@ -368,7 +368,7 @@ bbGrid.View = Backbone.View.extend({
         }
 
         if (!this.$navBar) {
-            this.navBar = new bbGrid.NavView({view: this});
+            this.navBar = new bbGrid.NavView({view: this, css: this.css});
             this.$navBar = this.navBar.render();
             this.$grid.after(this.$navBar);
             this.$loading = $('<div class="loading"><div class="loading-progress">' + this.dict.loading + '</div></div>');
@@ -1486,21 +1486,53 @@ bbGrid.RowCountView = Backbone.View.extend({
 
 ;bbGrid.NavView = Backbone.View.extend({
     initialize: function (options) {
+        console.log(['options',options]);
         this.view = options.view;
+        this.css = options.css;
     },
     tagName: 'div',
     render: function () {
         if (this.view.buttons) {
             var self = this, btn, btnHtml, $button;
-            this.view.$buttonsContainer = $('<div/>', {'class': 'bbGrid-navBar-buttonsContainer btn-group span'});
+            console.log(['self set to',self]);
+
+            var groupClass, btnClass;
+            if (self.css) {
+                // inject the styles
+                switch (self.css) {
+                    case 'bootstrap':
+                        this.view.$buttonsContainer = $('<div/>', {'class': 'bbGrid-navBar-buttonsContainer btn-group span'});
+                        btnWrapper = null;
+                        btnClass = 'btn btn-mini';
+                        break;
+                    case 'foundation':
+                        this.view.$buttonsContainer = $('<ul/>', {'class': 'bbGrid-navBar-buttonsContainer button-group'});
+                        btnWrapper = '<li/>';
+                        btnClass = 'button secondary tiny';
+                        break;
+                    case 'default':
+                        btnClass = '';
+                        break;
+                }
+            }
+
             this.view.buttons = _.map(this.view.buttons, function (button) {
                 if (!button) {
                     return undefined;
                 }
-                btn = _.template('<button <%if (id) {%>id="<%=id%>"<%}%> class="btn btn-mini" type="button"><%=title%></button>', null, bbGrid.templateSettings);
-                btnHtml = button.html || btn({id: button.id, title: button.title});
-                $button = $(btnHtml).appendTo(self.view.$buttonsContainer);
+
+                btn = _.template('<button <%if (id) {%>id="<%=id%>"<%}%> class="<%= btnClass %>" type="button"><%=title%></button>', null, bbGrid.templateSettings);
+                btnHtml = button.html || btn({id: button.id, title: button.title, btnClass: btnClass});
+                $button = $(btnHtml);
+                if( btnWrapper ) {
+                    $btnWrapper = $(btnWrapper);
+                    $button.appendTo($btnWrapper);
+                    $btnWrapper.appendTo(self.view.$buttonsContainer);
+                } else {
+                    $button.appendTo(self.view.$buttonsContainer);
+                }
                 if (button.onClick) {
+                    console.log(['binding onclick with',self.view,self.view.collection.length]);
                     button.onClick = _.bind(button.onClick, self.view.collection);
                     $button.click(button.onClick);
                 }
