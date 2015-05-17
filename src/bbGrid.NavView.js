@@ -7,8 +7,6 @@ bbGrid.NavView = Backbone.View.extend({
     render: function () {
         if (this.view.buttons) {
             var self = this, btn, btnHtml, $button;
-            console.log(['self set to',self]);
-
             var groupClass, btnClass;
             if (self.css) {
                 // inject the styles
@@ -45,7 +43,6 @@ bbGrid.NavView = Backbone.View.extend({
                     $button.appendTo(self.view.$buttonsContainer);
                 }
                 if (button.onClick) {
-                    console.log(['binding onclick with',self.view,self.view.collection.length]);
                     button.onClick = _.bind(button.onClick, self.view.collection);
                     $button.click(button.onClick);
                 }
