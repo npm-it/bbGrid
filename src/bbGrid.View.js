@@ -239,7 +239,7 @@ bbGrid.View = Backbone.View.extend({
         }
 
         if (!this.$navBar) {
-            this.navBar = new bbGrid.NavView({view: this});
+            this.navBar = new bbGrid.NavView({view: this, css: this.css});
             this.$navBar = this.navBar.render();
             this.$grid.after(this.$navBar);
             this.$loading = $('<div class="loading"><div class="loading-progress">' + this.dict.loading + '</div></div>');

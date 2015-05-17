@@ -1,11 +1,11 @@
-/*
+/*     
  *		bbGrid.js 2.0.0
- *
+ * 
  *		(c) 2012-2013 Minin Alexey, direct-fuel-injection.
  *		bbGrid may be freely distributed under the MIT license.
  *		For all details and documentation:
  *		http://direct-fuel-injection.github.com/bbGrid/
- *
+ *		
  *		Customizations by Russell Todd (North Point Ministries)
  *		https://github.com/npmweb/bbGrid
  */
@@ -52,7 +52,7 @@ var bbGrid = this.bbGrid = {
 bbGrid.Collection = Backbone.Collection.extend({
     initialize: function(models, options) {
         console.log('bbGrid.Collection.initialize()');
-/*        if (!_.isEmpty(models)) {
+/*        if (!_.isEmpty(models)) { 
             this.parse(models);
         } */
         console.info(this);
@@ -902,10 +902,10 @@ bbGrid.View = Backbone.View.extend({
         this.rendered = false;
         if (this.view.css) {
             switch(this.view.css) {
-                case 'bootstrap':
+                case 'bootstrap': 
                     this.templateBody  = this.bootstrapTemplate;
                     break;
-                case 'foundation':
+                case 'foundation': 
                     this.templateBody  = this.foundationTemplate;
                     break;
                 default:
@@ -937,7 +937,7 @@ bbGrid.View = Backbone.View.extend({
                 </select><%}%>\
                 <%}%>\
             </td>\
-        <%})%>',
+        <%})%>', 
     bootstrapTemplate: '<% if (isMultiselect) {%>\
             <td></td>\
         <%} if (isContainSubgrid) {%>\
@@ -958,7 +958,7 @@ bbGrid.View = Backbone.View.extend({
                 </select><%}%>\
                 <%}%>\
             </td>\
-        <%})%>',
+        <%})%>', 
     foundationTemplate: '<% if (isMultiselect) {%>\
             <td></td>\
         <%} if (isContainSubgrid) {%>\
@@ -979,17 +979,17 @@ bbGrid.View = Backbone.View.extend({
                 </select><%}%>\
                 <%}%>\
             </td>\
-        <%})%>',
-
+        <%})%>', 
+    
     onFilter: function (e) {
         var $f = $(e.currentTarget);
         var key = $f.attr('class');
         if (this.view.css == 'bootstrap') key = key.replace("form-control input-sm","").trim();
         var text = $.trim($f.val());
         var filterCol = _.findWhere(this.view.colModel,{filterProperty:key});
-        if (filterCol && filterCol.customFilter)
+        if (filterCol && filterCol.customFilter) 
             this.view.collection.applyFilter(key,text,filterCol.customFilter);
-        else
+        else 
             this.view.collection.applyFilter(key,text);
 
         /*
@@ -1038,7 +1038,7 @@ bbGrid.View = Backbone.View.extend({
             if (col.filter) {
                 if (col.filterOptions) {
                     options[col.property] = col.filterOptions;
-                } else {
+                } else { 
                     var list = _.uniq(self.view.collection.pluck(col.filterProperty || col.property));
                     list.sort();
                     options[col.property] = list;
@@ -1057,7 +1057,7 @@ bbGrid.View = Backbone.View.extend({
         this.rendered = true;
         return this.$el;
     }
-});
+});    
 
 ;/*
  * This encapsulates the search field and its events
@@ -1070,10 +1070,10 @@ bbGrid.SearchView = Backbone.View.extend({
         this.view = options.view;
         if (this.view.css) {
             switch(this.view.css) {
-                case 'bootstrap':
+                case 'bootstrap': 
                     this.templateBody  = this.bootstrapTemplate;
                     break;
-                case 'foundation':
+                case 'foundation': 
                     this.templateBody  = this.foundationTemplate;
                     break;
                 default:
@@ -1116,10 +1116,10 @@ bbGrid.RowCountView = Backbone.View.extend({
         this.view = options.view;
         if (this.view.css) {
             switch(this.view.css) {
-                case 'bootstrap':
+                case 'bootstrap': 
                     this.templateBody  = this.bootstrapTemplate;
                     break;
-                case 'foundation':
+                case 'foundation': 
                     this.templateBody  = this.foundationTemplate;
                     break;
                 default:
@@ -1190,7 +1190,7 @@ bbGrid.RowCountView = Backbone.View.extend({
         this.model.on('remove', this.modelRemoved, this);
         this.model.on('change', this.modelChanged, this);
 
-        // this requires Intl.DateFormat & NumberFormat,
+        // this requires Intl.DateFormat & NumberFormat, 
         // so load the shim if the browser doesn't support it
 
     },
@@ -1230,8 +1230,8 @@ bbGrid.RowCountView = Backbone.View.extend({
                     if (_.has(cell,'type')) {
                         switch(cell.type) {
                             case 'boolean':
-                                cell.value = ( cell.value === 1 ||
-                                            ( _.isString(cell.value) && (cell.value.toLowerCase() === 'true' || cell.value === '1') ) ||
+                                cell.value = ( cell.value === 1 || 
+                                            ( _.isString(cell.value) && (cell.value.toLowerCase() === 'true' || cell.value === '1') ) || 
                                             cell.value === true ) ? "True" : "False";
                                 break;
                             case 'currency': // add currency options
@@ -1243,16 +1243,16 @@ bbGrid.RowCountView = Backbone.View.extend({
                                 cell.value = self.number(cell);
                                 if (!_.has(cell.attr,"align")) cell.attr.align = 'right';
                                 break;
-                            case 'integer':
+                            case 'integer': 
                                 cell.minimumFractionDigits = 0;
                                 cell.value = self.number(cell);
                                 if (!_.has(cell.attr,"align")) cell.attr.align = 'right';
-                                break;
-                            case 'percent':
+                                break;                                
+                            case 'percent': 
                                 // classes or styles ? cell.style = 'percent';
                                 cell.value = self.number(cell);
                                 if (!_.has(cell.attr,"align")) cell.attr.align = 'right';
-                                break;
+                                break;                                
                             case 'email': // add mailto options??
                                 cell.value = '<a href="mailto:'+cell.value+'">'+cell.value+'</a>';
                                 break;
@@ -1271,8 +1271,8 @@ bbGrid.RowCountView = Backbone.View.extend({
                     }
                 }
                 cell.attributes = '';
-                _.each(_.keys(cell.attr),function(k) {
-                    cell.attributes += ' ' + k + '="'+_.property(k)(cell.attr)+'"';
+                _.each(_.keys(cell.attr),function(k) { 
+                    cell.attributes += ' ' + k + '="'+_.property(k)(cell.attr)+'"'; 
                 });
                 return cell;
             })
@@ -1297,17 +1297,17 @@ bbGrid.RowCountView = Backbone.View.extend({
         return formatter.format(options.value);
     },
     defaultDateFormat: {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
+        year: "numeric", 
+        month: "2-digit", 
+        day: "2-digit", 
+        hour: "2-digit", 
+        minute: "2-digit", 
         second: "2-digit",
         hour12: false
     },
     date: function(options) {
         var format = _.has(options,'format') ? options.format : this.defaultDateFormat;
-        var dt = _.isString(options.value) ? new Date(options.value) : options.value;
+        var dt = _.isString(options.value) ? new Date(options.value) : options.value; 
         var formatter = new (Intl || IntlPolyfill).DateTimeFormat(bbGrid.locale,format);
         return formatter.format(dt);
     },
@@ -1412,10 +1412,10 @@ bbGrid.RowCountView = Backbone.View.extend({
         this.colspan = options.colspan;
         if (this.view.css) {
             switch(this.view.css) {
-                case 'bootstrap':
+                case 'bootstrap': 
                     this.templateBody  = this.bootstrapTemplate;
                     break;
-                case 'foundation':
+                case 'foundation': 
                     this.templateBody  = this.foundationTemplate;
                     break;
                 default:
@@ -1427,7 +1427,7 @@ bbGrid.RowCountView = Backbone.View.extend({
     },
     tagName: 'td',
     className: 'pager',
-    defaultTemplate:
+    defaultTemplate: 
         '<div>\
             <a href="#" class="first<%if (page > 1) {%> active<%}%>">&lt;&lt;</a>&nbsp;\
             <a href="#" class="prev<%if (page > 1) {%> active<%}%>">&lt;</a>&nbsp;\
@@ -1436,7 +1436,7 @@ bbGrid.RowCountView = Backbone.View.extend({
             <a href="#" class="next<%if (page < cntpages) {%> active<%}%>">&gt;</a>&nbsp;\
             <a href="#" class="last<%if (page < cntpages) {%> active<%}%>">&gt;&gt;</a>&nbsp;\
         </div>',
-    bootstrapTemplate:
+    bootstrapTemplate: 
         '<div>\
             <a href="#" class="first btn btn-sm btn-default<%if (page > 1) {%> active<%}%>">&lt;&lt;</a>&nbsp;\
             <a href="#" class="prev btn btn-sm btn-default<%if (page > 1) {%> active<%}%>">&lt;</a>&nbsp;\
@@ -1445,7 +1445,7 @@ bbGrid.RowCountView = Backbone.View.extend({
             <a href="#" class="next btn btn-sm btn-default<%if (page < cntpages) {%> active<%}%>">&gt;</a>&nbsp;\
             <a href="#" class="last btn btn-sm btn-default<%if (page < cntpages) {%> active<%}%>">&gt;&gt;</a>&nbsp;\
         </div>',
-    foundationTemplate:
+    foundationTemplate: 
         '<div>\
             <a href="#" class="first<%if (page > 1) {%> active<%}%> button tiny">&lt;&lt;</a>&nbsp;\
             <a href="#" class="prev<%if (page > 1) {%> active<%}%> button tiny">&lt;</a>&nbsp;\
@@ -1455,7 +1455,7 @@ bbGrid.RowCountView = Backbone.View.extend({
             <a href="#" class="last<%if (page < cntpages) {%> active<%}%> button tiny">&gt;&gt;</a>&nbsp;\
         </div>',
     noOp: function(e) {
-        e.preventDefault();
+        e.preventDefault();   
     },
     onPageChanged: function (event) {
         this.view.trigger('pageChanged', event);
@@ -1486,7 +1486,6 @@ bbGrid.RowCountView = Backbone.View.extend({
 
 ;bbGrid.NavView = Backbone.View.extend({
     initialize: function (options) {
-        console.log(['options',options]);
         this.view = options.view;
         this.css = options.css;
     },
