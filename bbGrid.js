@@ -533,7 +533,10 @@ bbGrid.View = Backbone.View.extend({
         }
         $el = $(event.currentTarget);
         this.sortSequence || (this.sortSequence = []);
-        col = _.find(this.colModel, function (col) { return col.label === $el.text(); });
+        col = _.find(this.colModel, function (col) {
+            // label may contain markup; only compare against text in the label
+            return $('<div />').append(col.label).text() === $el.text();
+        });
         if (!col || !col.sortable) {
             return false;
         }
