@@ -1416,10 +1416,10 @@ bbGrid.RowCountView = Backbone.View.extend({
         this.colspan = options.colspan;
         if (this.view.css) {
             switch(this.view.css) {
-                case 'bootstrap': 
+                case 'bootstrap':
                     this.templateBody  = this.bootstrapTemplate;
                     break;
-                case 'foundation': 
+                case 'foundation':
                     this.templateBody  = this.foundationTemplate;
                     break;
                 default:
@@ -1431,7 +1431,7 @@ bbGrid.RowCountView = Backbone.View.extend({
     },
     tagName: 'td',
     className: 'pager',
-    defaultTemplate: 
+    defaultTemplate:
         '<div>\
             <a href="#" class="first<%if (page > 1) {%> active<%}%>">&lt;&lt;</a>&nbsp;\
             <a href="#" class="prev<%if (page > 1) {%> active<%}%>">&lt;</a>&nbsp;\
@@ -1440,7 +1440,7 @@ bbGrid.RowCountView = Backbone.View.extend({
             <a href="#" class="next<%if (page < cntpages) {%> active<%}%>">&gt;</a>&nbsp;\
             <a href="#" class="last<%if (page < cntpages) {%> active<%}%>">&gt;&gt;</a>&nbsp;\
         </div>',
-    bootstrapTemplate: 
+    bootstrapTemplate:
         '<div>\
             <a href="#" class="first btn btn-sm btn-default<%if (page > 1) {%> active<%}%>">&lt;&lt;</a>&nbsp;\
             <a href="#" class="prev btn btn-sm btn-default<%if (page > 1) {%> active<%}%>">&lt;</a>&nbsp;\
@@ -1449,17 +1449,17 @@ bbGrid.RowCountView = Backbone.View.extend({
             <a href="#" class="next btn btn-sm btn-default<%if (page < cntpages) {%> active<%}%>">&gt;</a>&nbsp;\
             <a href="#" class="last btn btn-sm btn-default<%if (page < cntpages) {%> active<%}%>">&gt;&gt;</a>&nbsp;\
         </div>',
-    foundationTemplate: 
+    foundationTemplate:
         '<div>\
-            <a href="#" class="first<%if (page > 1) {%> active<%}%> button tiny">&lt;&lt;</a>&nbsp;\
-            <a href="#" class="prev<%if (page > 1) {%> active<%}%> button tiny">&lt;</a>&nbsp;\
+            <a href="#" class="first<%if (page > 1) {%> active<%}%> button secondary tiny">&lt;&lt;</a>&nbsp;\
+            <a href="#" class="prev<%if (page > 1) {%> active<%}%> button secondary tiny">&lt;</a>&nbsp;\
             <input class="page" value="<%=page%>" type="number" size="<%=inputMaxDigits%>" min="1" max="<%= cntpages %>" maxlength="<%=inputMaxDigits%>"> / \
             <span class="total"> <%=cntpages%> </span>&nbsp;\
-            <a href="#" class="next<%if (page < cntpages) {%> active<%}%> button tiny">&gt;</a>&nbsp;\
-            <a href="#" class="last<%if (page < cntpages) {%> active<%}%> button tiny">&gt;&gt;</a>&nbsp;\
+            <a href="#" class="next<%if (page < cntpages) {%> active<%}%> button secondary tiny">&gt;</a>&nbsp;\
+            <a href="#" class="last<%if (page < cntpages) {%> active<%}%> button secondary tiny">&gt;&gt;</a>&nbsp;\
         </div>',
     noOp: function(e) {
-        e.preventDefault();   
+        e.preventDefault();
     },
     onPageChanged: function (event) {
         this.view.trigger('pageChanged', event);
