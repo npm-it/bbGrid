@@ -557,6 +557,7 @@ bbGrid.View = Backbone.View.extend({
         }
     },
     onPageChanged: function (event) {
+        event.preventDefault();
         var $el = $(event.currentTarget),
             className = $el.attr('class'),
             page;
