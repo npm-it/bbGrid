@@ -56,6 +56,11 @@ bbGrid.Collection = Backbone.Collection.extend({
             this.parse(models);
         } */
         console.info(this);
+
+        // Setting this in the extend() object uses the same filter list for
+        // all grids on the page. Probably has to do with how Backbone's
+        // inheritance and initialization works. Putting it here fixes it.
+        this.filters = {};
     },
     filtered: [],
     fullJson: [],
@@ -63,7 +68,7 @@ bbGrid.Collection = Backbone.Collection.extend({
         this.filtered = this.fullJson = this.toJSON();
         console.info(this);
     },
-    filters: {},
+    // filters: {},
     // should not be aware of columns and stuff
     applyFilter: function (key, text, customFilter) {
         if (text == '') delete this.filters[key];
