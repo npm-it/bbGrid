@@ -1467,6 +1467,7 @@ bbGrid.RowCountView = Backbone.View.extend({
         e.preventDefault();
     },
     onPageChanged: function (event) {
+        event.preventDefault();
         this.view.trigger('pageChanged', event);
     },
     initPager: function () {
