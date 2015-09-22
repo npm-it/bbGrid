@@ -2,7 +2,7 @@
 bbGrid.Collection = Backbone.Collection.extend({
     initialize: function(models, options) {
         console.log('bbGrid.Collection.initialize()');
-/*        if (!_.isEmpty(models)) { 
+/*        if (!_.isEmpty(models)) {
             this.parse(models);
         } */
         console.info(this);
@@ -11,6 +11,7 @@ bbGrid.Collection = Backbone.Collection.extend({
         // all grids on the page. Probably has to do with how Backbone's
         // inheritance and initialization works. Putting it here fixes it.
         this.filters = {};
+        this.searchCriteria = [];
     },
     filtered: [],
     fullJson: [],
@@ -73,7 +74,6 @@ bbGrid.Collection = Backbone.Collection.extend({
         this.trigger('reset');
     },
     searchText: '',
-    searchCriteria: [],
     search: function(text) {
         // apply filters to the full list first, then search within
         if (this.searchText != text) {
