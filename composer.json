@@ -1,5 +1,5 @@
 {
-    "name": "npmweb/bbgrid",
+    "name": "npmdigital/bbgrid",
     "description": "An extendable grid system (jqGrid like) developed on Backbone.js",
     "type": "component",
     "require": {
