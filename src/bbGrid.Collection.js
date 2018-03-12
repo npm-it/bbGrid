@@ -34,7 +34,8 @@ bbGrid.Collection = Backbone.Collection.extend({
                     if (customFilter) return customFilter(model,match);
                     var val = model.get(key);
                     if (val) {
-                        return ("" + val).toLowerCase().indexOf(match.toLowerCase()) >= 0;
+                        // Since this is driven by the column header why were we downcasing?
+                        return ("" + val).indexOf(match) >= 0;
                     } else {
                         return false;
                     }
